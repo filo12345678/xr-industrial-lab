@@ -15,7 +15,6 @@
 
     <title>Laboratorio XR - Modelo CAD Industrial</title>
 
-
     <!-- =====================================================
          A-FRAME
     ====================================================== -->
@@ -33,19 +32,13 @@
         body {
 
             margin: 0;
-
             width: 100%;
             height: 100%;
-
             overflow: hidden;
 
             font-family: Arial, sans-serif;
         }
 
-
-        /* ==================================================
-           PANEL PRINCIPAL
-        ================================================== */
 
         #overlay {
 
@@ -106,26 +99,9 @@
         }
 
 
-        #estadoModelo {
-
-            margin-top: 10px;
-
-            padding-top: 10px;
-
-            border-top: 1px solid #777;
-        }
-
-
-        #controlesPC {
-
-            margin-top: 10px;
-
-            padding-top: 10px;
-
-            border-top: 1px solid #777;
-        }
-
-
+        #estadoModelo,
+        #estadoAncla,
+        #controlesPC,
         #instruccionAR {
 
             margin-top: 10px;
@@ -137,12 +113,12 @@
 
 
         /* ==================================================
-           PANEL COMPACTO DURANTE AR
+           PANEL REDUCIDO EN AR
         ================================================== */
 
         #overlay.modoAR {
 
-            width: 260px;
+            width: 255px;
 
             background: rgba(0, 0, 0, 0.65);
         }
@@ -159,15 +135,14 @@
         }
 
 
+        #overlay.modoAR #estadoAncla,
         #overlay.modoAR #instruccionAR {
 
-            margin: 0;
+            margin-top: 0;
 
-            padding: 0;
+            padding-top: 0;
 
             border: none;
-
-            font-size: 14px;
         }
 
     </style>
@@ -178,7 +153,7 @@
 
 
         // =====================================================
-        // CONTROL DE CARGA DEL MODELO GLB
+        // MODELO GLB
         // =====================================================
 
         AFRAME.registerComponent(
@@ -193,11 +168,6 @@
                     modelo.addEventListener(
                         'model-loaded',
                         function () {
-
-                            console.log(
-                                'Modelo GLB cargado correctamente'
-                            );
-
 
                             const estado =
                                 document.getElementById(
@@ -223,7 +193,7 @@
                         function (evento) {
 
                             console.error(
-                                'Error cargando modelo GLB:',
+                                'Error GLB:',
                                 evento.detail
                             );
 
@@ -254,13 +224,7 @@
 
 
         // =====================================================
-        // OCULTAR ELEMENTOS VIRTUALES EN AR
-        //
-        // Oculta:
-        // - piso virtual
-        // - cielo virtual
-        //
-        // para dejar visible el entorno real.
+        // OCULTAR OBJETOS EN AR
         // =====================================================
 
         AFRAME.registerComponent(
@@ -316,17 +280,10 @@
 
 
         // =====================================================
-        // MOVIMIENTO EN PC
+        // MOVIMIENTO PC
         //
-        // W = adelante
-        // S = atrás
-        // A = izquierda
-        // D = derecha
-        //
-        // E = subir
-        // Q = bajar
-        //
-        // Mouse = mirar
+        // W S A D
+        // Q E
         // =====================================================
 
         AFRAME.registerComponent(
@@ -336,28 +293,24 @@
                 schema: {
 
                     velocidad: {
-
                         type: 'number',
                         default: 2.0
                     },
 
 
                     velocidadVertical: {
-
                         type: 'number',
                         default: 1.5
                     },
 
 
                     alturaMinima: {
-
                         type: 'number',
                         default: 0.25
                     },
 
 
                     alturaMaxima: {
-
                         type: 'number',
                         default: 5
                     }
@@ -366,7 +319,6 @@
 
 
                 init: function () {
-
 
                     this.teclas = {};
 
@@ -377,11 +329,6 @@
                         );
 
 
-
-                    // =========================================
-                    // TECLA PRESIONADA
-                    // =========================================
-
                     this.keyDown =
                         (evento) => {
 
@@ -389,7 +336,6 @@
                             this.teclas[
                                 evento.code
                             ] = true;
-
 
 
                             if (
@@ -410,11 +356,6 @@
                         };
 
 
-
-                    // =========================================
-                    // TECLA SOLTADA
-                    // =========================================
-
                     this.keyUp =
                         (evento) => {
 
@@ -424,7 +365,6 @@
                             ] = false;
 
                         };
-
 
 
                     window.addEventListener(
@@ -441,12 +381,10 @@
                 },
 
 
-
                 tick: function (
                     tiempo,
                     deltaTime
                 ) {
-
 
                     if (!deltaTime) {
 
@@ -459,11 +397,7 @@
                         this.el.sceneEl;
 
 
-
-                    // =========================================
-                    // EN AR / VR:
-                    // NO CONTROLAR POR TECLADO
-                    // =========================================
+                    // No interferir con seguimiento XR.
 
                     if (
 
@@ -477,15 +411,6 @@
                     }
 
 
-
-                    if (!this.camara) {
-
-                        return;
-
-                    }
-
-
-
                     const dt =
                         deltaTime / 1000;
 
@@ -493,11 +418,6 @@
                     const rig =
                         this.el.object3D;
 
-
-
-                    // =========================================
-                    // ORIENTACIÓN ACTUAL DE LA CÁMARA
-                    // =========================================
 
                     const quaternion =
                         new THREE.Quaternion();
@@ -511,7 +431,7 @@
 
 
                     // =========================================
-                    // VECTOR HACIA ADELANTE
+                    // ADELANTE
                     // =========================================
 
                     const adelante =
@@ -527,8 +447,6 @@
                     );
 
 
-                    // Mantener movimiento horizontal.
-
                     adelante.y = 0;
 
 
@@ -543,7 +461,7 @@
 
 
                     // =========================================
-                    // VECTOR HACIA LA DERECHA
+                    // DERECHA
                     // =========================================
 
                     const derecha =
@@ -573,7 +491,7 @@
 
 
                     // =========================================
-                    // W - ADELANTE
+                    // WASD
                     // =========================================
 
                     if (
@@ -592,11 +510,6 @@
                     }
 
 
-
-                    // =========================================
-                    // S - ATRÁS
-                    // =========================================
-
                     if (
                         this.teclas['KeyS']
                     ) {
@@ -613,11 +526,6 @@
                     }
 
 
-
-                    // =========================================
-                    // D - DERECHA
-                    // =========================================
-
                     if (
                         this.teclas['KeyD']
                     ) {
@@ -633,11 +541,6 @@
 
                     }
 
-
-
-                    // =========================================
-                    // A - IZQUIERDA
-                    // =========================================
 
                     if (
                         this.teclas['KeyA']
@@ -657,7 +560,7 @@
 
 
                     // =========================================
-                    // E - SUBIR
+                    // E = SUBIR
                     // =========================================
 
                     if (
@@ -675,7 +578,7 @@
 
 
                     // =========================================
-                    // Q - BAJAR
+                    // Q = BAJAR
                     // =========================================
 
                     if (
@@ -692,10 +595,6 @@
 
 
 
-                    // =========================================
-                    // LIMITAR ALTURA
-                    // =========================================
-
                     rig.position.y =
                         THREE.MathUtils.clamp(
 
@@ -709,24 +608,6 @@
 
                         );
 
-                },
-
-
-
-                remove: function () {
-
-
-                    window.removeEventListener(
-                        'keydown',
-                        this.keyDown
-                    );
-
-
-                    window.removeEventListener(
-                        'keyup',
-                        this.keyUp
-                    );
-
                 }
 
             }
@@ -735,17 +616,18 @@
 
 
         // =====================================================
-        // COLOCACIÓN FIJA DEL CAD EN AR
+        // AR CON HIT TEST + ANCLA ESPACIAL
+        //
+        // AQUÍ ESTÁ EL CAMBIO IMPORTANTE.
         // =====================================================
 
         AFRAME.registerComponent(
-            'colocacion-fija-ar',
+            'ar-anclado',
             {
 
                 init: function () {
 
-
-                    const escena =
+                    this.escena =
                         this.el;
 
 
@@ -755,9 +637,15 @@
                         );
 
 
-                    this.punto =
+                    this.reticulo =
                         document.getElementById(
-                            'puntoColocacionAR'
+                            'reticuloAR'
+                        );
+
+
+                    this.rig =
+                        document.getElementById(
+                            'rig'
                         );
 
 
@@ -767,22 +655,84 @@
                         );
 
 
+                    this.texto =
+                        document.getElementById(
+                            'instruccionAR'
+                        );
+
+
+                    this.estadoAncla =
+                        document.getElementById(
+                            'estadoAncla'
+                        );
+
+
+                    this.session =
+                        null;
+
+
+                    this.viewerSpace =
+                        null;
+
+
+                    this.referenceSpace =
+                        null;
+
+
+                    this.hitTestSource =
+                        null;
+
+
+                    this.ultimoHit =
+                        null;
+
+
+                    this.anchor =
+                        null;
+
+
                     this.colocado =
                         false;
 
 
+                    this.posicionRigPC =
+                        new THREE.Vector3();
+
+
 
                     // =================================================
-                    // ENTRAR EN AR
+                    // ENTRAR EN XR
                     // =================================================
 
-                    escena.addEventListener(
+                    this.escena.addEventListener(
                         'enter-vr',
-                        () => {
+                        async () => {
+
+
+                            // Guardar posición del PC.
+
+                            this.posicionRigPC.copy(
+                                this.rig.object3D.position
+                            );
+
+
+                            /*
+                            En XR no queremos conservar
+                            la altura artificial del PC.
+
+                            El dispositivo XR define
+                            la posición del usuario.
+                            */
+
+                            this.rig.object3D.position.set(
+                                0,
+                                0,
+                                0
+                            );
 
 
                             if (
-                                !escena.is('ar-mode')
+                                !this.escena.is('ar-mode')
                             ) {
 
                                 return;
@@ -794,35 +744,9 @@
                                 false;
 
 
+                            this.anchor =
+                                null;
 
-                            // =========================================
-                            // HACER PANEL COMPACTO
-                            // =========================================
-
-                            if (
-                                this.panel
-                            ) {
-
-                                this.panel.style.display =
-                                    'block';
-
-
-                                this.panel.style.opacity =
-                                    '1';
-
-
-                                this.panel.classList.add(
-                                    'modoAR'
-                                );
-
-                            }
-
-
-
-                            // =========================================
-                            // OCULTAR ROBOT
-                            // HASTA ENCONTRAR SUPERFICIE
-                            // =========================================
 
                             this.modelo.setAttribute(
                                 'visible',
@@ -830,290 +754,345 @@
                             );
 
 
-                            this.punto.setAttribute(
+                            this.reticulo.setAttribute(
+                                'visible',
+                                false
+                            );
+
+
+                            // Panel compacto.
+
+                            this.panel.style.display =
+                                'block';
+
+
+                            this.panel.style.opacity =
+                                '1';
+
+
+                            this.panel.classList.add(
+                                'modoAR'
+                            );
+
+
+                            this.estadoAncla.innerHTML =
+                                "<span class='esperando'>" +
+                                "Anclaje AR: preparando..." +
+                                "</span>";
+
+
+                            this.texto.innerHTML =
+                                "Mueve lentamente el teléfono.<br>" +
+                                "Apunta hacia una mesa o el piso.";
+
+
+
+                            try {
+
+
+                                this.session =
+                                    this.escena.renderer.xr
+                                        .getSession();
+
+
+                                // =====================================
+                                // ESPACIO LOCAL
+                                // =====================================
+
+                                this.referenceSpace =
+                                    await this.session
+                                        .requestReferenceSpace(
+                                            'local'
+                                        );
+
+
+                                // =====================================
+                                // ESPACIO DEL OBSERVADOR
+                                // =====================================
+
+                                this.viewerSpace =
+                                    await this.session
+                                        .requestReferenceSpace(
+                                            'viewer'
+                                        );
+
+
+                                // =====================================
+                                // HIT TEST
+                                // =====================================
+
+                                this.hitTestSource =
+                                    await this.session
+                                        .requestHitTestSource(
+                                            {
+                                                space:
+                                                    this.viewerSpace
+                                            }
+                                        );
+
+
+                                this.estadoAncla.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Hit Test: activo" +
+                                    "</span>";
+
+
+                                // =====================================
+                                // TOQUE EN PANTALLA
+                                // =====================================
+
+                                this.session.addEventListener(
+                                    'select',
+                                    this.seleccionar
+                                );
+
+
+                            }
+
+                            catch (error) {
+
+
+                                console.error(
+                                    'Error preparando AR:',
+                                    error
+                                );
+
+
+                                this.estadoAncla.innerHTML =
+                                    "<span class='error'>" +
+                                    "Error iniciando Hit Test" +
+                                    "</span>";
+
+                            }
+
+                        }
+                    );
+
+
+
+                    // =================================================
+                    // FUNCIÓN DE SELECCIÓN
+                    // =================================================
+
+                    this.seleccionar =
+                        async () => {
+
+
+                            if (
+                                this.colocado ||
+                                !this.ultimoHit
+                            ) {
+
+                                return;
+
+                            }
+
+
+                            this.colocado =
+                                true;
+
+
+
+                            // =========================================
+                            // INTENTAR CREAR XRAnchor REAL
+                            // =========================================
+
+                            if (
+
+                                typeof this.ultimoHit
+                                    .createAnchor ===
+                                'function'
+
+                            ) {
+
+
+                                try {
+
+
+                                    this.anchor =
+                                        await this.ultimoHit
+                                            .createAnchor();
+
+
+                                    this.estadoAncla.innerHTML =
+                                        "<span class='ok'>" +
+                                        "Ancla espacial: activa" +
+                                        "</span>";
+
+
+                                }
+
+                                catch (error) {
+
+
+                                    console.warn(
+                                        'XRAnchor no disponible. ' +
+                                        'Se utilizará referencia local.',
+                                        error
+                                    );
+
+
+                                    this.anchor =
+                                        null;
+
+
+                                    this.estadoAncla.innerHTML =
+                                        "<span class='esperando'>" +
+                                        "Anclaje: referencia local" +
+                                        "</span>";
+
+                                }
+
+                            }
+
+
+
+                            /*
+                            Si no hay soporte de anchors,
+                            dejamos la última pose del
+                            Hit Test en el espacio local.
+                            */
+
+                            this.modelo.setAttribute(
                                 'visible',
                                 true
                             );
 
 
+                            this.reticulo.setAttribute(
+                                'visible',
+                                false
+                            );
 
-                            const texto =
-                                document.getElementById(
-                                    'instruccionAR'
-                                );
 
-
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "Buscando una superficie..." +
-                                    "<br>" +
-                                    "Mueve lentamente el teléfono.";
-
-                            }
-
-                        }
-                    );
+                            this.texto.innerHTML =
+                                "<span class='ok'>" +
+                                "Modelo fijado." +
+                                "</span>";
 
 
 
-                    // =================================================
-                    // HIT TEST INICIADO
-                    // =================================================
+                            // =========================================
+                            // OCULTAR PANEL
+                            // =========================================
 
-                    escena.addEventListener(
-                        'ar-hit-test-start',
-                        () => {
-
-
-                            if (
-                                this.colocado
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            const texto =
-                                document.getElementById(
-                                    'instruccionAR'
-                                );
-
-
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "Buscando una superficie..." +
-                                    "<br>" +
-                                    "Apunta hacia una mesa o el piso.";
-
-                            }
-
-                        }
-                    );
-
-
-
-                    // =================================================
-                    // SUPERFICIE DETECTADA
-                    // =================================================
-
-                    escena.addEventListener(
-                        'ar-hit-test-achieved',
-                        () => {
-
-
-                            if (
-                                this.colocado
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            const texto =
-                                document.getElementById(
-                                    'instruccionAR'
-                                );
-
-
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "<span class='ok'>" +
-                                    "Superficie detectada." +
-                                    "</span>" +
-                                    "<br>" +
-                                    "Toca la pantalla para colocar " +
-                                    "el modelo CAD.";
-
-                            }
-
-                        }
-                    );
-
-
-
-                    // =================================================
-                    // TOCAR PARA COLOCAR
-                    // =================================================
-
-                    escena.addEventListener(
-                        'ar-hit-test-select',
-                        () => {
-
-
-                            if (
-                                this.colocado
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            if (
-                                !escena.is('ar-mode')
-                            ) {
-
-                                return;
-
-                            }
-
-
-
-                            requestAnimationFrame(
+                            setTimeout(
                                 () => {
 
 
-                                    // =================================
-                                    // OBTENER POSICIÓN
-                                    // =================================
+                                    if (
+                                        this.colocado &&
+                                        this.escena.is(
+                                            'ar-mode'
+                                        )
+                                    ) {
 
-                                    const posicion =
-                                        new THREE.Vector3();
+
+                                        this.panel.style.opacity =
+                                            '0';
 
 
-                                    this.punto.object3D
-                                        .getWorldPosition(
-                                            posicion
+                                        setTimeout(
+                                            () => {
+
+
+                                                if (
+                                                    this.colocado
+                                                ) {
+
+                                                    this.panel.style.display =
+                                                        'none';
+
+                                                }
+
+                                            },
+
+                                            300
                                         );
-
-
-
-                                    // =================================
-                                    // COLOCAR EL CAD
-                                    // =================================
-
-                                    this.modelo.object3D
-                                        .position
-                                        .copy(
-                                            posicion
-                                        );
-
-
-
-                                    /*
-                                    No copiamos la rotación del
-                                    Hit Test.
-
-                                    El robot conserva su
-                                    orientación vertical.
-                                    */
-
-
-                                    this.modelo.setAttribute(
-                                        'visible',
-                                        true
-                                    );
-
-
-
-                                    // =================================
-                                    // OCULTAR RETÍCULO
-                                    // =================================
-
-                                    this.punto.setAttribute(
-                                        'visible',
-                                        false
-                                    );
-
-
-
-                                    // =================================
-                                    // BLOQUEAR POSICIÓN
-                                    // =========================================
-
-                                    this.colocado =
-                                        true;
-
-
-
-                                    // =================================
-                                    // MENSAJE FINAL
-                                    // =================================
-
-                                    const texto =
-                                        document.getElementById(
-                                            'instruccionAR'
-                                        );
-
-
-                                    if (texto) {
-
-                                        texto.innerHTML =
-                                            "<span class='ok'>" +
-                                            "Modelo colocado y fijado." +
-                                            "</span>";
 
                                     }
 
+                                },
 
-
-                                    // =================================
-                                    // OCULTAR PANEL
-                                    // DESPUÉS DE 0.8 SEGUNDOS
-                                    // =================================
-
-                                    setTimeout(
-                                        () => {
-
-
-                                            if (
-                                                this.panel &&
-                                                this.colocado &&
-                                                escena.is('ar-mode')
-                                            ) {
-
-
-                                                this.panel.style.opacity =
-                                                    '0';
-
-
-                                                setTimeout(
-                                                    () => {
-
-
-                                                        if (
-                                                            this.panel &&
-                                                            this.colocado &&
-                                                            escena.is('ar-mode')
-                                                        ) {
-
-                                                            this.panel.style.display =
-                                                                'none';
-
-                                                        }
-
-                                                    },
-
-                                                    300
-                                                );
-
-                                            }
-
-                                        },
-
-                                        800
-                                    );
-
-                                }
+                                800
                             );
 
-                        }
-                    );
+                        };
 
 
 
                     // =================================================
-                    // SALIR DE AR / VR
+                    // SALIR DE XR
                     // =================================================
 
-                    escena.addEventListener(
+                    this.escena.addEventListener(
                         'exit-vr',
                         () => {
+
+
+                            if (
+                                this.session
+                            ) {
+
+
+                                this.session.removeEventListener(
+                                    'select',
+                                    this.seleccionar
+                                );
+
+                            }
+
+
+                            if (
+                                this.hitTestSource
+                            ) {
+
+                                this.hitTestSource.cancel();
+
+                            }
+
+
+                            if (
+                                this.anchor
+                            ) {
+
+
+                                try {
+
+                                    this.anchor.delete();
+
+                                }
+
+                                catch (error) {
+
+                                }
+
+                            }
+
+
+
+                            this.session =
+                                null;
+
+
+                            this.viewerSpace =
+                                null;
+
+
+                            this.referenceSpace =
+                                null;
+
+
+                            this.hitTestSource =
+                                null;
+
+
+                            this.ultimoHit =
+                                null;
+
+
+                            this.anchor =
+                                null;
 
 
                             this.colocado =
@@ -1122,36 +1101,23 @@
 
 
                             // =========================================
-                            // VOLVER A MOSTRAR EL PANEL
+                            // RESTAURAR RIG DEL PC
                             // =========================================
 
-                            if (
-                                this.panel
-                            ) {
-
-                                this.panel.style.display =
-                                    'block';
-
-
-                                this.panel.style.opacity =
-                                    '1';
-
-
-                                this.panel.classList.remove(
-                                    'modoAR'
-                                );
-
-                            }
+                            this.rig.object3D.position.copy(
+                                this.posicionRigPC
+                            );
 
 
 
                             // =========================================
-                            // RESTAURAR POSICIÓN DEL CAD
+                            // RESTAURAR MODELO
                             // =========================================
 
-                            this.modelo.setAttribute(
-                                'position',
-                                '0 0 -3'
+                            this.modelo.object3D.position.set(
+                                0,
+                                0,
+                                -3
                             );
 
 
@@ -1163,38 +1129,237 @@
 
 
                             // =========================================
-                            // RESTAURAR RETÍCULO
+                            // RESTAURAR INTERFAZ
                             // =========================================
 
-                            this.punto.setAttribute(
-                                'position',
-                                '0 -100 0'
+                            this.panel.style.display =
+                                'block';
+
+
+                            this.panel.style.opacity =
+                                '1';
+
+
+                            this.panel.classList.remove(
+                                'modoAR'
                             );
 
 
-                            this.punto.setAttribute(
-                                'visible',
-                                true
-                            );
+                            this.estadoAncla.innerHTML =
+                                "Anclaje AR: esperando sesión";
 
 
-
-                            const texto =
-                                document.getElementById(
-                                    'instruccionAR'
-                                );
-
-
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "En modo AR podrás colocar " +
-                                    "el modelo sobre una superficie real.";
-
-                            }
+                            this.texto.innerHTML =
+                                "En AR podrás fijar el modelo " +
+                                "sobre una superficie real.";
 
                         }
                     );
+
+                },
+
+
+
+                // =====================================================
+                // FRAME XR
+                // =====================================================
+
+                tick: function () {
+
+
+                    if (
+                        !this.escena.is('ar-mode')
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const frame =
+                        this.escena.frame;
+
+
+                    if (
+                        !frame ||
+                        !this.referenceSpace
+                    ) {
+
+                        return;
+
+                    }
+
+
+
+                    // =================================================
+                    // SI YA EXISTE UN ANCLA
+                    // =================================================
+
+                    if (
+                        this.anchor
+                    ) {
+
+
+                        const pose =
+                            frame.getPose(
+
+                                this.anchor.anchorSpace,
+
+                                this.referenceSpace
+
+                            );
+
+
+                        if (pose) {
+
+
+                            /*
+                            El XRAnchor nos da la posición
+                            actualizada del MISMO punto real.
+
+                            Esto es lo que evita que el CAD
+                            siga a la cámara.
+                            */
+
+                            this.modelo.object3D.position.set(
+
+                                pose.transform.position.x,
+
+                                pose.transform.position.y,
+
+                                pose.transform.position.z
+
+                            );
+
+                        }
+
+
+                        return;
+
+                    }
+
+
+
+                    // =================================================
+                    // SI EL OBJETO YA FUE COLOCADO SIN XRAnchor
+                    // =================================================
+
+                    if (
+                        this.colocado
+                    ) {
+
+                        /*
+                        No hacemos NADA.
+
+                        Esta posición queda almacenada en
+                        el espacio de referencia local.
+
+                        No seguimos moviendo el objeto
+                        con el Hit Test.
+                        */
+
+                        return;
+
+                    }
+
+
+
+                    // =================================================
+                    // HIT TEST ANTES DE COLOCAR
+                    // =================================================
+
+                    if (
+                        !this.hitTestSource
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const resultados =
+                        frame.getHitTestResults(
+                            this.hitTestSource
+                        );
+
+
+                    if (
+                        resultados.length === 0
+                    ) {
+
+
+                        this.reticulo.setAttribute(
+                            'visible',
+                            false
+                        );
+
+
+                        return;
+
+                    }
+
+
+
+                    this.ultimoHit =
+                        resultados[0];
+
+
+                    const pose =
+                        this.ultimoHit.getPose(
+                            this.referenceSpace
+                        );
+
+
+                    if (!pose) {
+
+                        return;
+
+                    }
+
+
+
+                    // =================================================
+                    // POSICIÓN DEL RETÍCULO
+                    // =================================================
+
+                    this.reticulo.object3D.position.set(
+
+                        pose.transform.position.x,
+
+                        pose.transform.position.y,
+
+                        pose.transform.position.z
+
+                    );
+
+
+                    this.reticulo.setAttribute(
+                        'visible',
+                        true
+                    );
+
+
+
+                    // =================================================
+                    // PREVISUALIZACIÓN DEL MODELO
+                    // =================================================
+
+                    this.modelo.object3D.position.set(
+
+                        pose.transform.position.x,
+
+                        pose.transform.position.y,
+
+                        pose.transform.position.z
+
+                    );
+
+
+                    this.texto.innerHTML =
+                        "<span class='ok'>" +
+                        "Superficie detectada." +
+                        "</span><br>" +
+                        "Toca la pantalla para fijar el modelo.";
 
                 }
 
@@ -1204,7 +1369,7 @@
 
 
         // =====================================================
-        // COMPROBACIÓN DE WEBXR
+        // COMPATIBILIDAD WEBXR
         // =====================================================
 
         async function comprobarXR() {
@@ -1228,10 +1393,6 @@
                 );
 
 
-
-            // =================================================
-            // WEBXR
-            // =================================================
 
             if (
                 !navigator.xr
@@ -1273,15 +1434,10 @@
 
 
 
-            // =================================================
-            // VR
-            // =================================================
-
             try {
 
 
                 const soportaVR =
-
                     await navigator.xr
                         .isSessionSupported(
                             'immersive-vr'
@@ -1289,7 +1445,6 @@
 
 
                 vr.innerHTML =
-
                     soportaVR
                     ?
                     'VR: compatible'
@@ -1298,7 +1453,6 @@
 
 
                 vr.className =
-
                     soportaVR
                     ?
                     'ok'
@@ -1322,15 +1476,10 @@
 
 
 
-            // =================================================
-            // AR
-            // =================================================
-
             try {
 
 
                 const soportaAR =
-
                     await navigator.xr
                         .isSessionSupported(
                             'immersive-ar'
@@ -1338,7 +1487,6 @@
 
 
                 ar.innerHTML =
-
                     soportaAR
                     ?
                     'AR: compatible'
@@ -1347,7 +1495,6 @@
 
 
                 ar.className =
-
                     soportaAR
                     ?
                     'ok'
@@ -1403,7 +1550,6 @@
     </div>
 
 
-
     <div
         id="estadoWebXR"
         class="esperando">
@@ -1411,7 +1557,6 @@
         WebXR: comprobando...
 
     </div>
-
 
 
     <div
@@ -1423,7 +1568,6 @@
     </div>
 
 
-
     <div
         id="estadoAR"
         class="esperando">
@@ -1431,7 +1575,6 @@
         AR: comprobando...
 
     </div>
-
 
 
     <div
@@ -1443,10 +1586,13 @@
     </div>
 
 
+    <div id="estadoAncla">
 
-    <!-- =====================================================
-         CONTROLES PC
-    ====================================================== -->
+        Anclaje AR: esperando sesión
+
+    </div>
+
+
 
     <div id="controlesPC">
 
@@ -1478,7 +1624,7 @@
 
     <div id="instruccionAR">
 
-        En modo AR podrás colocar
+        En modo AR podrás fijar
         el modelo sobre una superficie real.
 
     </div>
@@ -1501,19 +1647,14 @@
 
 
     webxr="
-        optionalFeatures: hit-test, dom-overlay;
+        requiredFeatures: hit-test;
+        optionalFeatures: anchors, dom-overlay;
         referenceSpaceType: local;
         overlayElement: #overlay;
     "
 
 
-    ar-hit-test="
-        target: #puntoColocacionAR;
-        type: footprint;
-    "
-
-
-    colocacion-fija-ar
+    ar-anclado
 
 
     renderer="
@@ -1596,26 +1737,28 @@
 
 
     <!-- =====================================================
-         RETÍCULO DE DETECCIÓN AR
+         RETÍCULO AR
     ====================================================== -->
 
     <a-ring
 
-        id="puntoColocacionAR"
+        id="reticuloAR"
 
-        position="0 -100 0"
+        visible="false"
+
+        position="0 0 -2"
 
         rotation="-90 0 0"
 
-        radius-inner="0.12"
+        radius-inner="0.10"
 
-        radius-outer="0.18"
+        radius-outer="0.16"
 
         color="#00FF88"
 
         material="
             transparent: true;
-            opacity: 0.8;
+            opacity: 0.85;
             side: double;
         ">
 
@@ -1624,7 +1767,7 @@
 
 
     <!-- =====================================================
-         CONTENEDOR DEL CAD
+         MODELO
     ====================================================== -->
 
     <a-entity
@@ -1633,19 +1776,9 @@
 
         position="0 0 -3"
 
-        rotation="0 0 0"
-
         visible="true"
     >
 
-
-
-        <!-- =================================================
-             MODELO CAD
-
-             90° EN Y:
-             VISTA INICIAL LATERAL
-        ================================================== -->
 
         <a-entity
 
@@ -1675,8 +1808,6 @@
 
     <!-- =====================================================
          PISO PC / VR
-
-         SE OCULTA EN AR
     ====================================================== -->
 
     <a-plane
@@ -1703,8 +1834,6 @@
 
     <!-- =====================================================
          CIELO PC / VR
-
-         SE OCULTA EN AR
     ====================================================== -->
 
     <a-sky
@@ -1718,10 +1847,7 @@
 
 
     <!-- =====================================================
-         RIG DEL USUARIO
-
-         POSICIÓN INICIAL:
-         1.6 m DE ALTURA
+         RIG
     ====================================================== -->
 
     <a-entity
@@ -1738,11 +1864,6 @@
         "
     >
 
-
-
-        <!-- =================================================
-             CÁMARA
-        ================================================== -->
 
         <a-camera
 
