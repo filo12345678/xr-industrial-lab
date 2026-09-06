@@ -15,6 +15,7 @@
 
     <title>Laboratorio XR - Modelo CAD Industrial</title>
 
+
     <!-- =====================================================
          A-FRAME
     ====================================================== -->
@@ -84,19 +85,16 @@
 
 
         .ok {
-
             color: #00ff88;
         }
 
 
         .error {
-
             color: #ff5555;
         }
 
 
         .esperando {
-
             color: #ffcc00;
         }
 
@@ -138,7 +136,7 @@
 
 
         // =====================================================
-        // CARGA DEL MODELO GLB
+        // CONTROL DE CARGA DEL MODELO GLB
         // =====================================================
 
         AFRAME.registerComponent(
@@ -183,7 +181,7 @@
                         function (evento) {
 
                             console.error(
-                                'Error cargando modelo:',
+                                'Error cargando modelo GLB:',
                                 evento.detail
                             );
 
@@ -214,7 +212,14 @@
 
 
         // =====================================================
-        // OCULTAR ELEMENTOS EN MODO AR
+        // OCULTAR OBJETOS EN MODO AR
+        //
+        // Se usa para ocultar:
+        //
+        // - piso virtual
+        // - cielo virtual
+        //
+        // y permitir ver el mundo real.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -223,7 +228,9 @@
 
                 init: function () {
 
-                    const elemento = this.el;
+                    const elemento =
+                        this.el;
+
 
                     const escena =
                         elemento.sceneEl;
@@ -268,19 +275,34 @@
 
 
         // =====================================================
-        // MOVIMIENTO VERTICAL PARA PC
+        // MOVIMIENTO COMPLETO EN PC
         //
-        // E = SUBIR
-        // Q = BAJAR
+        // W = adelante
+        // S = atrás
+        // A = izquierda
+        // D = derecha
+        //
+        // E = subir
+        // Q = bajar
+        //
+        // Mouse = mirar
         // =====================================================
 
         AFRAME.registerComponent(
-            'movimiento-vertical',
+            'movimiento-pc',
             {
 
                 schema: {
 
                     velocidad: {
+
+                        type: 'number',
+
+                        default: 2.0
+                    },
+
+
+                    velocidadVertical: {
 
                         type: 'number',
 
@@ -292,7 +314,7 @@
 
                         type: 'number',
 
-                        default: 0.3
+                        default: 0.25
                     },
 
 
@@ -300,7 +322,7 @@
 
                         type: 'number',
 
-                        default: 4.0
+                        default: 5
                     }
 
                 },
@@ -308,117 +330,326 @@
 
                 init: function () {
 
-                    this.subiendo = false;
 
-                    this.bajando = false;
+                    // =========================================
+                    // REGISTRO DE TECLAS
+                    // =========================================
 
-
-                    this.presionarTecla =
-                        (event) => {
-
-                            const tecla =
-                                event.key.toLowerCase();
+                    this.teclas = {};
 
 
-                            if (tecla === 'e') {
+                    // Cámara principal.
 
-                                this.subiendo =
-                                    true;
+                    this.camara =
+                        document.getElementById(
+                            'camaraPrincipal'
+                        );
 
-                            }
 
 
-                            if (tecla === 'q') {
+                    // =========================================
+                    // TECLA PRESIONADA
+                    // =========================================
 
-                                this.bajando =
-                                    true;
+                    this.keyDown =
+                        (evento) => {
+
+
+                            this.teclas[
+                                evento.code
+                            ] = true;
+
+
+
+                            if (
+
+                                evento.code === 'KeyW' ||
+
+                                evento.code === 'KeyA' ||
+
+                                evento.code === 'KeyS' ||
+
+                                evento.code === 'KeyD' ||
+
+                                evento.code === 'KeyQ' ||
+
+                                evento.code === 'KeyE'
+
+                            ) {
+
+                                evento.preventDefault();
 
                             }
 
                         };
 
 
-                    this.soltarTecla =
-                        (event) => {
 
-                            const tecla =
-                                event.key.toLowerCase();
+                    // =========================================
+                    // TECLA SOLTADA
+                    // =========================================
 
-
-                            if (tecla === 'e') {
-
-                                this.subiendo =
-                                    false;
-
-                            }
+                    this.keyUp =
+                        (evento) => {
 
 
-                            if (tecla === 'q') {
-
-                                this.bajando =
-                                    false;
-
-                            }
+                            this.teclas[
+                                evento.code
+                            ] = false;
 
                         };
+
 
 
                     window.addEventListener(
                         'keydown',
-                        this.presionarTecla
+                        this.keyDown
                     );
 
 
                     window.addEventListener(
                         'keyup',
-                        this.soltarTecla
+                        this.keyUp
                     );
 
                 },
 
 
+
                 tick: function (
                     tiempo,
-                    delta
+                    deltaTime
                 ) {
 
 
-                    if (!delta) {
+                    if (!deltaTime) {
 
                         return;
+
                     }
 
 
-                    /*
-                    No modificamos la posición
-                    cuando estamos dentro de XR.
-                    */
+                    const escena =
+                        this.el.sceneEl;
+
+
+
+                    // =========================================
+                    // EN VR / AR NO USAR TECLADO
+                    //
+                    // La posición viene del dispositivo XR.
+                    // =========================================
 
                     if (
-                        this.el.sceneEl.is('vr-mode')
+
+                        escena.is('vr-mode') ||
+
+                        escena.is('ar-mode')
+
                     ) {
 
                         return;
+
                     }
 
 
+
+                    if (!this.camara) {
+
+                        return;
+
+                    }
+
+
+
                     const dt =
-                        delta / 1000;
+                        deltaTime / 1000;
 
 
-                    const posicion =
-                        this.el.object3D.position;
+
+                    const rig =
+                        this.el.object3D;
 
 
 
                     // =========================================
-                    // SUBIR
+                    // OBTENER DIRECCIÓN DE LA CÁMARA
                     // =========================================
 
-                    if (this.subiendo) {
+                    const quaternion =
+                        new THREE.Quaternion();
 
-                        posicion.y +=
+
+                    this.camara.object3D
+                        .getWorldQuaternion(
+                            quaternion
+                        );
+
+
+
+                    // =========================================
+                    // VECTOR HACIA ADELANTE
+                    // =========================================
+
+                    const adelante =
+                        new THREE.Vector3(
+                            0,
+                            0,
+                            -1
+                        );
+
+
+                    adelante.applyQuaternion(
+                        quaternion
+                    );
+
+
+                    /*
+                    Eliminamos componente vertical.
+
+                    Así mirar hacia arriba y presionar W
+                    NO hace que la cámara vuele.
+                    */
+
+                    adelante.y = 0;
+
+
+                    if (
+                        adelante.lengthSq() > 0
+                    ) {
+
+                        adelante.normalize();
+
+                    }
+
+
+
+                    // =========================================
+                    // VECTOR HACIA LA DERECHA
+                    // =========================================
+
+                    const derecha =
+                        new THREE.Vector3(
+                            1,
+                            0,
+                            0
+                        );
+
+
+                    derecha.applyQuaternion(
+                        quaternion
+                    );
+
+
+                    derecha.y = 0;
+
+
+                    if (
+                        derecha.lengthSq() > 0
+                    ) {
+
+                        derecha.normalize();
+
+                    }
+
+
+
+                    // =========================================
+                    // W = ADELANTE
+                    // =========================================
+
+                    if (
+                        this.teclas['KeyW']
+                    ) {
+
+                        rig.position.addScaledVector(
+
+                            adelante,
+
                             this.data.velocidad *
+                            dt
+
+                        );
+
+                    }
+
+
+
+                    // =========================================
+                    // S = ATRÁS
+                    // =========================================
+
+                    if (
+                        this.teclas['KeyS']
+                    ) {
+
+                        rig.position.addScaledVector(
+
+                            adelante,
+
+                            -this.data.velocidad *
+                            dt
+
+                        );
+
+                    }
+
+
+
+                    // =========================================
+                    // D = DERECHA
+                    // =========================================
+
+                    if (
+                        this.teclas['KeyD']
+                    ) {
+
+                        rig.position.addScaledVector(
+
+                            derecha,
+
+                            this.data.velocidad *
+                            dt
+
+                        );
+
+                    }
+
+
+
+                    // =========================================
+                    // A = IZQUIERDA
+                    // =========================================
+
+                    if (
+                        this.teclas['KeyA']
+                    ) {
+
+                        rig.position.addScaledVector(
+
+                            derecha,
+
+                            -this.data.velocidad *
+                            dt
+
+                        );
+
+                    }
+
+
+
+                    // =========================================
+                    // E = SUBIR
+                    // =========================================
+
+                    if (
+                        this.teclas['KeyE']
+                    ) {
+
+                        rig.position.y +=
+
+                            this.data
+                                .velocidadVertical *
                             dt;
 
                     }
@@ -426,13 +657,17 @@
 
 
                     // =========================================
-                    // BAJAR
+                    // Q = BAJAR / AGACHARSE
                     // =========================================
 
-                    if (this.bajando) {
+                    if (
+                        this.teclas['KeyQ']
+                    ) {
 
-                        posicion.y -=
-                            this.data.velocidad *
+                        rig.position.y -=
+
+                            this.data
+                                .velocidadVertical *
                             dt;
 
                     }
@@ -443,35 +678,35 @@
                     // LIMITAR ALTURA
                     // =========================================
 
-                    posicion.y =
-                        Math.max(
+                    rig.position.y =
+                        THREE.MathUtils.clamp(
 
-                            this.data.alturaMinima,
+                            rig.position.y,
 
-                            Math.min(
+                            this.data
+                                .alturaMinima,
 
-                                this.data.alturaMaxima,
-
-                                posicion.y
-
-                            )
+                            this.data
+                                .alturaMaxima
 
                         );
 
                 },
 
 
+
                 remove: function () {
+
 
                     window.removeEventListener(
                         'keydown',
-                        this.presionarTecla
+                        this.keyDown
                     );
 
 
                     window.removeEventListener(
                         'keyup',
-                        this.soltarTecla
+                        this.keyUp
                     );
 
                 }
@@ -483,6 +718,18 @@
 
         // =====================================================
         // COLOCACIÓN FIJA DEL MODELO EN AR
+        //
+        // WebXR mueve solamente un marcador.
+        //
+        // Cuando tocamos:
+        //
+        // marcador
+        //    ↓
+        // posición
+        //    ↓
+        // robot
+        //
+        // Después el robot NO vuelve a moverse.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -494,6 +741,7 @@
 
                     const escena =
                         this.el;
+
 
 
                     this.modelo =
@@ -531,12 +779,13 @@
                             }
 
 
+
                             this.colocado =
                                 false;
 
 
-                            // Ocultar robot mientras
-                            // buscamos superficie.
+
+                            // Ocultar modelo.
 
                             this.modelo.setAttribute(
                                 'visible',
@@ -544,10 +793,13 @@
                             );
 
 
+                            // Mostrar marcador.
+
                             this.punto.setAttribute(
                                 'visible',
                                 true
                             );
+
 
 
                             const texto =
@@ -559,8 +811,9 @@
                             if (texto) {
 
                                 texto.innerHTML =
-                                    "Mueve lentamente el teléfono.<br>" +
-                                    "Apunta hacia una mesa o el piso.";
+                                    "Mueve lentamente el teléfono." +
+                                    "<br>" +
+                                    "Apunta a una mesa o al piso.";
 
                             }
 
@@ -570,7 +823,7 @@
 
 
                     // =================================================
-                    // COMIENZA HIT TEST
+                    // HIT TEST INICIADO
                     // =================================================
 
                     escena.addEventListener(
@@ -608,7 +861,7 @@
 
 
                     // =================================================
-                    // SUPERFICIE DETECTADA
+                    // SUPERFICIE ENCONTRADA
                     // =================================================
 
                     escena.addEventListener(
@@ -638,7 +891,8 @@
                                     "Superficie detectada." +
                                     "</span>" +
                                     "<br>" +
-                                    "Toca la pantalla para fijar el robot.";
+                                    "Toca la pantalla una vez " +
+                                    "para colocar el robot.";
 
                             }
 
@@ -648,7 +902,7 @@
 
 
                     // =================================================
-                    // TOCAR PARA COLOCAR
+                    // TOCAR PARA FIJAR
                     // =================================================
 
                     escena.addEventListener(
@@ -674,16 +928,18 @@
                             }
 
 
+
                             requestAnimationFrame(
                                 () => {
 
 
+                                    // =================================
+                                    // OBTENER POSICIÓN DEL HIT TEST
+                                    // =================================
+
                                     const posicion =
                                         new THREE.Vector3();
 
-
-                                    // Obtener posición
-                                    // de la superficie.
 
                                     this.punto.object3D
                                         .getWorldPosition(
@@ -691,10 +947,10 @@
                                         );
 
 
-                                    // Copiar solamente posición.
-                                    //
-                                    // NO copiamos la rotación,
-                                    // así el robot permanece vertical.
+
+                                    // =================================
+                                    // COLOCAR ROBOT
+                                    // =================================
 
                                     this.modelo.object3D
                                         .position
@@ -703,10 +959,21 @@
                                         );
 
 
+
+                                    /*
+                                    NO copiamos la orientación
+                                    del Hit Test.
+
+                                    Así el robot permanece vertical.
+                                    */
+
+
+
                                     this.modelo.setAttribute(
                                         'visible',
                                         true
                                     );
+
 
 
                                     // Ocultar marcador.
@@ -717,7 +984,8 @@
                                     );
 
 
-                                    // Bloquear.
+
+                                    // Bloquear ubicación.
 
                                     this.colocado =
                                         true;
@@ -737,8 +1005,8 @@
                                             "Robot colocado y fijado." +
                                             "</span>" +
                                             "<br>" +
-                                            "Ahora camina alrededor para " +
-                                            "observarlo desde todos los lados.";
+                                            "Ahora camina alrededor " +
+                                            "para observar todas sus caras.";
 
                                     }
 
@@ -763,6 +1031,9 @@
                                 false;
 
 
+
+                            // Restaurar posición PC.
+
                             this.modelo.setAttribute(
                                 'position',
                                 '0 0 -3'
@@ -774,6 +1045,9 @@
                                 true
                             );
 
+
+
+                            // Restaurar marcador.
 
                             this.punto.setAttribute(
                                 'position',
@@ -787,6 +1061,7 @@
                             );
 
 
+
                             const texto =
                                 document.getElementById(
                                     'instruccionAR'
@@ -796,8 +1071,8 @@
                             if (texto) {
 
                                 texto.innerHTML =
-                                    "En modo AR podrás colocar el modelo " +
-                                    "sobre una superficie real.";
+                                    "En AR podrás colocar el " +
+                                    "modelo sobre una superficie real.";
 
                             }
 
@@ -812,7 +1087,7 @@
 
 
         // =====================================================
-        // COMPATIBILIDAD WEBXR
+        // COMPROBAR WEBXR
         // =====================================================
 
         async function comprobarXR() {
@@ -836,6 +1111,10 @@
                 );
 
 
+
+            // =================================================
+            // WEBXR
+            // =================================================
 
             if (
                 !navigator.xr
@@ -885,6 +1164,7 @@
 
 
                 const soportaVR =
+
                     await navigator.xr
                         .isSessionSupported(
                             'immersive-vr'
@@ -892,6 +1172,7 @@
 
 
                 vr.innerHTML =
+
                     soportaVR
                     ?
                     'VR: compatible'
@@ -900,6 +1181,7 @@
 
 
                 vr.className =
+
                     soportaVR
                     ?
                     'ok'
@@ -914,6 +1196,7 @@
 
                 vr.innerHTML =
                     'VR: error';
+
 
                 vr.className =
                     'error';
@@ -930,6 +1213,7 @@
 
 
                 const soportaAR =
+
                     await navigator.xr
                         .isSessionSupported(
                             'immersive-ar'
@@ -937,6 +1221,7 @@
 
 
                 ar.innerHTML =
+
                     soportaAR
                     ?
                     'AR: compatible'
@@ -945,6 +1230,7 @@
 
 
                 ar.className =
+
                     soportaAR
                     ?
                     'ok'
@@ -959,6 +1245,7 @@
 
                 ar.innerHTML =
                     'AR: error';
+
 
                 ar.className =
                     'error';
@@ -999,6 +1286,7 @@
     </div>
 
 
+
     <div
         id="estadoWebXR"
         class="esperando">
@@ -1008,6 +1296,7 @@
     </div>
 
 
+
     <div
         id="estadoVR"
         class="esperando">
@@ -1015,6 +1304,7 @@
         VR: comprobando...
 
     </div>
+
 
 
     <div
@@ -1038,7 +1328,7 @@
 
 
     <!-- =====================================================
-         CONTROLES DE PC
+         CONTROLES PC
     ====================================================== -->
 
     <div id="controlesPC">
@@ -1071,8 +1361,8 @@
 
     <div id="instruccionAR">
 
-        En modo AR podrás colocar el modelo
-        sobre una superficie real.
+        En modo AR podrás colocar
+        el modelo sobre una superficie real.
 
     </div>
 
@@ -1082,7 +1372,7 @@
 
 
 <!-- =========================================================
-     ESCENA
+     ESCENA PRINCIPAL
 ========================================================= -->
 
 <a-scene
@@ -1125,11 +1415,21 @@
 
 
     <!-- =====================================================
-         RECURSOS
+         ARCHIVOS
     ====================================================== -->
 
     <a-assets timeout="30000">
 
+
+        <!--
+        MODELO CAD
+
+        Ruta:
+
+        xr-industrial-lab/
+        └── models/
+            └── modelo_industrial.glb
+        -->
 
         <a-asset-item
 
@@ -1189,7 +1489,10 @@
 
 
     <!-- =====================================================
-         MARCADOR DE SUPERFICIE AR
+         MARCADOR HIT TEST
+
+         Este círculo será movido por WebXR
+         mientras buscamos una superficie.
     ====================================================== -->
 
     <a-ring
@@ -1236,7 +1539,13 @@
         <!-- =================================================
              MODELO CAD
 
-             ROTACIÓN 90° EN Y PARA VISTA LATERAL
+             Vista inicial lateral:
+
+             rotation="0 90 0"
+
+             Si quieres ver el otro lateral:
+             
+             rotation="0 -90 0"
         ================================================== -->
 
         <a-entity
@@ -1266,8 +1575,7 @@
 
 
     <!-- =====================================================
-         PISO
-         SOLO PC / VR
+         PISO PC / VR
     ====================================================== -->
 
     <a-plane
@@ -1293,8 +1601,7 @@
 
 
     <!-- =====================================================
-         CIELO
-         SOLO PC / VR
+         CIELO PC / VR
     ====================================================== -->
 
     <a-sky
@@ -1310,7 +1617,13 @@
     <!-- =====================================================
          RIG DEL USUARIO
          
-         Q/E CAMBIAN LA ALTURA DE ESTE ELEMENTO.
+         Este objeto contiene la cámara.
+
+         En PC:
+         nosotros movemos este elemento.
+
+         En XR:
+         WebXR controla la pose del visor.
     ====================================================== -->
 
     <a-entity
@@ -1319,10 +1632,11 @@
 
         position="0 1.6 0"
 
-        movimiento-vertical="
-            velocidad: 1.5;
-            alturaMinima: 0.3;
-            alturaMaxima: 4;
+        movimiento-pc="
+            velocidad: 2.0;
+            velocidadVertical: 1.5;
+            alturaMinima: 0.25;
+            alturaMaxima: 5;
         "
     >
 
@@ -1330,17 +1644,21 @@
 
         <!-- =================================================
              CÁMARA
+             
+             IMPORTANTE:
+             YA NO UTILIZAMOS wasd-controls.
+             
+             Nuestro componente movimiento-pc
+             maneja todas las teclas.
         ================================================== -->
 
         <a-camera
 
+            id="camaraPrincipal"
+
             position="0 0 0"
 
-            look-controls
-
-            wasd-controls="
-                acceleration: 25;
-            ">
+            look-controls>
 
         </a-camera>
 
