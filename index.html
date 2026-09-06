@@ -1,60 +1,548 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
 
-    <title>Laboratorio XR</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    >
 
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.1/dist/aframe-master.min.js"></script>
+    <title>Laboratorio XR Multiplataforma</title>
+
+    <!-- A-FRAME -->
+    <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+
+
+    <style>
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+
+        #infoXR {
+
+            position: fixed;
+
+            top: 15px;
+            left: 15px;
+
+            width: 270px;
+
+            padding: 14px;
+
+            background: rgba(0, 0, 0, 0.75);
+
+            color: white;
+
+            border-radius: 10px;
+
+            z-index: 9999;
+
+            font-size: 14px;
+
+            line-height: 1.5;
+
+            pointer-events: none;
+        }
+
+
+        #titulo {
+
+            color: #00ff88;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            margin-bottom: 8px;
+        }
+
+
+        .compatible {
+
+            color: #00ff88;
+
+        }
+
+
+        .no-compatible {
+
+            color: #ff5555;
+
+        }
+
+
+        .esperando {
+
+            color: #ffcc00;
+
+        }
+
+    </style>
+
+
+    <script>
+
+        // =====================================================
+        // OCULTAR ELEMENTOS CUANDO ESTEMOS EN AR
+        // =====================================================
+
+        AFRAME.registerComponent(
+            'hide-in-ar-mode',
+            {
+
+                init: function () {
+
+                    const elemento = this.el;
+
+                    const escena = elemento.sceneEl;
+
+
+                    escena.addEventListener(
+                        'enter-vr',
+                        function () {
+
+                            if (escena.is('ar-mode')) {
+
+                                elemento.setAttribute(
+                                    'visible',
+                                    false
+                                );
+
+                            }
+
+                        }
+                    );
+
+
+                    escena.addEventListener(
+                        'exit-vr',
+                        function () {
+
+                            elemento.setAttribute(
+                                'visible',
+                                true
+                            );
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+
+        // =====================================================
+        // DETECCIÓN DE COMPATIBILIDAD WEBXR
+        // =====================================================
+
+        async function detectarWebXR() {
+
+            const webxr =
+                document.getElementById("webxr");
+
+            const vr =
+                document.getElementById("vr");
+
+            const ar =
+                document.getElementById("ar");
+
+            const https =
+                document.getElementById("https");
+
+
+            // -------------------------------------------------
+            // HTTPS
+            // -------------------------------------------------
+
+            if (window.isSecureContext) {
+
+                https.innerHTML =
+                    "HTTPS: compatible";
+
+                https.className =
+                    "compatible";
+
+            }
+
+            else {
+
+                https.innerHTML =
+                    "HTTPS: no disponible";
+
+                https.className =
+                    "no-compatible";
+
+            }
+
+
+            // -------------------------------------------------
+            // WEBXR
+            // -------------------------------------------------
+
+            if (!navigator.xr) {
+
+                webxr.innerHTML =
+                    "WebXR: no disponible";
+
+                webxr.className =
+                    "no-compatible";
+
+
+                vr.innerHTML =
+                    "VR inmersiva: no disponible";
+
+                vr.className =
+                    "no-compatible";
+
+
+                ar.innerHTML =
+                    "AR inmersiva: no disponible";
+
+                ar.className =
+                    "no-compatible";
+
+
+                return;
+
+            }
+
+
+            webxr.innerHTML =
+                "WebXR: disponible";
+
+            webxr.className =
+                "compatible";
+
+
+            // -------------------------------------------------
+            // VR
+            // -------------------------------------------------
+
+            try {
+
+                const soportaVR =
+                    await navigator.xr.isSessionSupported(
+                        "immersive-vr"
+                    );
+
+
+                if (soportaVR) {
+
+                    vr.innerHTML =
+                        "VR inmersiva: compatible";
+
+                    vr.className =
+                        "compatible";
+
+                }
+
+                else {
+
+                    vr.innerHTML =
+                        "VR inmersiva: no compatible";
+
+                    vr.className =
+                        "no-compatible";
+
+                }
+
+            }
+
+            catch (error) {
+
+                vr.innerHTML =
+                    "VR inmersiva: error";
+
+                vr.className =
+                    "no-compatible";
+
+            }
+
+
+            // -------------------------------------------------
+            // AR
+            // -------------------------------------------------
+
+            try {
+
+                const soportaAR =
+                    await navigator.xr.isSessionSupported(
+                        "immersive-ar"
+                    );
+
+
+                if (soportaAR) {
+
+                    ar.innerHTML =
+                        "AR inmersiva: compatible";
+
+                    ar.className =
+                        "compatible";
+
+                }
+
+                else {
+
+                    ar.innerHTML =
+                        "AR inmersiva: no compatible";
+
+                    ar.className =
+                        "no-compatible";
+
+                }
+
+            }
+
+            catch (error) {
+
+                ar.innerHTML =
+                    "AR inmersiva: error";
+
+                ar.className =
+                    "no-compatible";
+
+            }
+
+        }
+
+
+        window.addEventListener(
+            "load",
+            detectarWebXR
+        );
+
+    </script>
+
 </head>
 
 
 <body>
 
-<a-scene>
 
-    <!-- Cubo -->
+<!-- =========================================================
+     PANEL DE INFORMACIÓN
+========================================================= -->
+
+<div id="infoXR">
+
+    <div id="titulo">
+        LABORATORIO XR
+    </div>
+
+    <div>
+        Compatibilidad del dispositivo
+    </div>
+
+    <br>
+
+    <div
+        id="https"
+        class="esperando">
+        HTTPS: comprobando...
+    </div>
+
+    <div
+        id="webxr"
+        class="esperando">
+        WebXR: comprobando...
+    </div>
+
+    <div
+        id="vr"
+        class="esperando">
+        VR inmersiva: comprobando...
+    </div>
+
+    <div
+        id="ar"
+        class="esperando">
+        AR inmersiva: comprobando...
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     ESCENA A-FRAME
+========================================================= -->
+
+<a-scene
+
+    xr-mode-ui="XRMode: xr"
+
+    background="
+        color: #ECECEC;
+        transparent: true
+    "
+
+    renderer="
+        colorManagement: true;
+        physicallyCorrectLights: true
+    "
+>
+
+
+    <!-- =====================================================
+         LUCES
+    ====================================================== -->
+
+    <a-light
+
+        type="ambient"
+
+        color="#FFFFFF"
+
+        intensity="0.8">
+
+    </a-light>
+
+
+    <a-light
+
+        type="directional"
+
+        color="#FFFFFF"
+
+        intensity="0.7"
+
+        position="-1 3 2">
+
+    </a-light>
+
+
+
+    <!-- =====================================================
+         CUBO
+    ====================================================== -->
+
     <a-box
-        position="0 1 -3"
+
+        position="-1 0.5 -3"
+
         rotation="0 45 0"
-        color="#4CC3D9">
+
+        width="1"
+
+        height="1"
+
+        depth="1"
+
+        color="#4CC3D9"
+
+        shadow>
+
     </a-box>
 
 
-    <!-- Esfera -->
+
+    <!-- =====================================================
+         ESFERA
+    ====================================================== -->
+
     <a-sphere
-        position="2 1 -4"
+
+        position="0.8 1.25 -4"
+
         radius="1"
-        color="#EF2D5E">
+
+        color="#EF2D5E"
+
+        shadow>
+
     </a-sphere>
 
 
-    <!-- Cilindro -->
+
+    <!-- =====================================================
+         CILINDRO
+    ====================================================== -->
+
     <a-cylinder
-        position="-2 1 -4"
+
+        position="-2.2 0.75 -4"
+
         radius="0.5"
+
         height="1.5"
-        color="#FFC65D">
+
+        color="#FFC65D"
+
+        shadow>
+
     </a-cylinder>
 
 
-    <!-- Piso -->
+
+    <!-- =====================================================
+         PISO
+         Se oculta automáticamente cuando entramos en AR.
+    ====================================================== -->
+
     <a-plane
-        position="0 0 0"
+
+        hide-in-ar-mode
+
+        position="0 0 -4"
+
         rotation="-90 0 0"
+
         width="10"
+
         height="10"
-        color="#7BC8A4">
+
+        color="#7BC8A4"
+
+        shadow="receive: true">
+
     </a-plane>
 
 
-    <!-- Fondo -->
+
+    <!-- =====================================================
+         CIELO
+         También se oculta en AR para poder ver el mundo real.
+    ====================================================== -->
+
     <a-sky
+
+        hide-in-ar-mode
+
         color="#ECECEC">
+
     </a-sky>
 
+
+
+    <!-- =====================================================
+         CÁMARA
+    ====================================================== -->
+
+    <a-entity
+
+        position="0 1.6 0">
+
+        <a-camera
+
+            look-controls
+
+            wasd-controls>
+
+        </a-camera>
+
+    </a-entity>
+
+
 </a-scene>
+
 
 </body>
 
