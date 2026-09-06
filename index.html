@@ -7,25 +7,23 @@
 
     <meta
         name="viewport"
-        content="width=device-width,
-                 initial-scale=1.0,
-                 maximum-scale=1.0,
-                 user-scalable=no"
+        content="
+            width=device-width,
+            initial-scale=1.0,
+            maximum-scale=1.0,
+            user-scalable=no
+        "
     >
 
-    <title>Laboratorio XR - Modelo CAD Industrial</title>
+    <title>Laboratorio XR - Brazo Robótico Industrial</title>
 
 
     <!-- =====================================================
-         A-FRAME
+         A-FRAME 1.8.0
     ====================================================== -->
 
     <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
 
-
-    <!-- =====================================================
-         ESTILOS
-    ====================================================== -->
 
     <style>
 
@@ -35,79 +33,11 @@
             margin: 0;
 
             width: 100%;
+
             height: 100%;
 
             overflow: hidden;
 
-            font-family: Arial, sans-serif;
-        }
-
-
-        #overlay {
-
-            position: fixed;
-
-            top: 15px;
-            left: 15px;
-
-            width: 300px;
-
-            padding: 14px;
-
-            background: rgba(0, 0, 0, 0.75);
-
-            color: white;
-
-            border-radius: 10px;
-
-            z-index: 9999;
-
-            font-size: 13px;
-
-            line-height: 1.5;
-
-            pointer-events: none;
-        }
-
-
-        #titulo {
-
-            color: #00ff88;
-
-            font-size: 17px;
-
-            font-weight: bold;
-
-            margin-bottom: 8px;
-        }
-
-
-        .ok {
-
-            color: #00ff88;
-        }
-
-
-        .error {
-
-            color: #ff5555;
-        }
-
-
-        .esperando {
-
-            color: #ffcc00;
-        }
-
-
-        #estadoModelo,
-        #controlesPC {
-
-            margin-top: 10px;
-
-            padding-top: 10px;
-
-            border-top: 1px solid #777;
         }
 
     </style>
@@ -116,96 +46,31 @@
 
     <script>
 
-
         // =====================================================
-        // COMPROBAR CARGA DEL MODELO
         // =====================================================
-
-        AFRAME.registerComponent(
-            'control-modelo',
-            {
-
-                init: function () {
-
-                    const modelo = this.el;
-
-
-                    modelo.addEventListener(
-                        'model-loaded',
-                        function () {
-
-                            console.log(
-                                'Modelo GLB cargado correctamente.'
-                            );
-
-
-                            const estado =
-                                document.getElementById(
-                                    'estadoModelo'
-                                );
-
-
-                            if (estado) {
-
-                                estado.innerHTML =
-                                    "<span class='ok'>" +
-                                    "Modelo CAD: cargado correctamente" +
-                                    "</span>";
-
-                            }
-
-                        }
-                    );
-
-
-                    modelo.addEventListener(
-                        'model-error',
-                        function (evento) {
-
-                            console.error(
-                                'Error cargando GLB:',
-                                evento.detail
-                            );
-
-
-                            const estado =
-                                document.getElementById(
-                                    'estadoModelo'
-                                );
-
-
-                            if (estado) {
-
-                                estado.innerHTML =
-                                    "<span class='error'>" +
-                                    "Modelo CAD: error al cargar" +
-                                    "</span>";
-
-                            }
-
-                        }
-                    );
-
-                }
-
-            }
-        );
-
-
-
-        // =====================================================
-        // MOVIMIENTO COMPLETO PARA PC
         //
-        // W = adelante
-        // S = atrás
+        //       MOVIMIENTO PARA COMPUTADOR
+        //
+        // =====================================================
+        // =====================================================
+        //
+        // Mouse = mirar
+        //
+        // W = avanzar
+        // S = retroceder
         // A = izquierda
         // D = derecha
         //
         // E = subir
         // Q = bajar
         //
-        // Mouse = mirar
+        // IMPORTANTE:
+        //
+        // Este componente se desactiva automáticamente
+        // cuando entramos en AR o VR.
+        //
         // =====================================================
+
 
         AFRAME.registerComponent(
             'movimiento-pc',
@@ -217,7 +82,8 @@
 
                         type: 'number',
 
-                        default: 2
+                        default: 2.0
+
                     },
 
 
@@ -226,6 +92,7 @@
                         type: 'number',
 
                         default: 1.5
+
                     },
 
 
@@ -233,7 +100,8 @@
 
                         type: 'number',
 
-                        default: -1.35
+                        default: 0.25
+
                     },
 
 
@@ -241,7 +109,8 @@
 
                         type: 'number',
 
-                        default: 3.4
+                        default: 5.0
+
                     }
 
                 },
@@ -250,14 +119,24 @@
                 init: function () {
 
 
+                    // =========================================
+                    // TECLAS
+                    // =========================================
+
                     this.teclas = {};
 
 
-                    this.camara =
-                        document.getElementById(
-                            'camaraPrincipal'
-                        );
+                    // =========================================
+                    // GUARDAR POSICIÓN DE PC
+                    // =========================================
 
+                    this.posicionPC =
+                        new THREE.Vector3();
+
+
+                    // =========================================
+                    // TECLA PRESIONADA
+                    // =========================================
 
                     this.keyDown =
                         (evento) => {
@@ -271,10 +150,15 @@
                             if (
 
                                 evento.code === 'KeyW' ||
+
                                 evento.code === 'KeyA' ||
+
                                 evento.code === 'KeyS' ||
+
                                 evento.code === 'KeyD' ||
+
                                 evento.code === 'KeyQ' ||
+
                                 evento.code === 'KeyE'
 
                             ) {
@@ -285,6 +169,10 @@
 
                         };
 
+
+                    // =========================================
+                    // TECLA SOLTADA
+                    // =========================================
 
                     this.keyUp =
                         (evento) => {
@@ -308,7 +196,58 @@
                         this.keyUp
                     );
 
+
+
+                    // =========================================
+                    // ENTRAR EN XR
+                    // =========================================
+
+                    this.el.sceneEl.addEventListener(
+                        'enter-vr',
+                        () => {
+
+
+                            // Guardamos dónde estaba
+                            // la cámara en PC.
+
+                            this.posicionPC.copy(
+                                this.el.object3D.position
+                            );
+
+
+                            // Limpiar teclas.
+
+                            this.teclas = {};
+
+                        }
+                    );
+
+
+
+                    // =========================================
+                    // SALIR DE XR
+                    // =========================================
+
+                    this.el.sceneEl.addEventListener(
+                        'exit-vr',
+                        () => {
+
+
+                            // Regresar a la posición
+                            // que teníamos en escritorio.
+
+                            this.el.object3D.position.copy(
+                                this.posicionPC
+                            );
+
+
+                            this.teclas = {};
+
+                        }
+                    );
+
                 },
+
 
 
                 tick: function (
@@ -330,12 +269,17 @@
 
 
                     // =========================================
-                    // NO MOVER EL RIG MEDIANTE TECLADO EN XR
+                    // MUY IMPORTANTE
+                    //
+                    // EN AR O VR NO HACEMOS NADA.
+                    //
+                    // WebXR controla la posición física.
                     // =========================================
 
                     if (
 
                         escena.is('vr-mode') ||
+
                         escena.is('ar-mode')
 
                     ) {
@@ -346,18 +290,11 @@
 
 
 
-                    if (!this.camara) {
-
-                        return;
-
-                    }
-
-
                     const dt =
                         deltaTime / 1000;
 
 
-                    const rig =
+                    const camara =
                         this.el.object3D;
 
 
@@ -370,15 +307,14 @@
                         new THREE.Quaternion();
 
 
-                    this.camara.object3D
-                        .getWorldQuaternion(
-                            quaternion
-                        );
+                    camara.getWorldQuaternion(
+                        quaternion
+                    );
 
 
 
                     // =========================================
-                    // DIRECCIÓN ADELANTE
+                    // VECTOR HACIA ADELANTE
                     // =========================================
 
                     const adelante =
@@ -394,6 +330,9 @@
                     );
 
 
+                    // No queremos subir/bajar
+                    // cuando miramos hacia arriba.
+
                     adelante.y = 0;
 
 
@@ -408,7 +347,7 @@
 
 
                     // =========================================
-                    // DIRECCIÓN DERECHA
+                    // VECTOR HACIA LA DERECHA
                     // =========================================
 
                     const derecha =
@@ -445,7 +384,7 @@
                         this.teclas['KeyW']
                     ) {
 
-                        rig.position.addScaledVector(
+                        camara.position.addScaledVector(
 
                             adelante,
 
@@ -466,7 +405,7 @@
                         this.teclas['KeyS']
                     ) {
 
-                        rig.position.addScaledVector(
+                        camara.position.addScaledVector(
 
                             adelante,
 
@@ -487,7 +426,7 @@
                         this.teclas['KeyD']
                     ) {
 
-                        rig.position.addScaledVector(
+                        camara.position.addScaledVector(
 
                             derecha,
 
@@ -508,7 +447,7 @@
                         this.teclas['KeyA']
                     ) {
 
-                        rig.position.addScaledVector(
+                        camara.position.addScaledVector(
 
                             derecha,
 
@@ -529,7 +468,7 @@
                         this.teclas['KeyE']
                     ) {
 
-                        rig.position.y +=
+                        camara.position.y +=
 
                             this.data
                                 .velocidadVertical *
@@ -547,7 +486,7 @@
                         this.teclas['KeyQ']
                     ) {
 
-                        rig.position.y -=
+                        camara.position.y -=
 
                             this.data
                                 .velocidadVertical *
@@ -558,13 +497,13 @@
 
 
                     // =========================================
-                    // LIMITAR ALTURA
+                    // LIMITES DE ALTURA
                     // =========================================
 
-                    rig.position.y =
+                    camara.position.y =
                         THREE.MathUtils.clamp(
 
-                            rig.position.y,
+                            camara.position.y,
 
                             this.data
                                 .alturaMinima,
@@ -575,6 +514,7 @@
                         );
 
                 },
+
 
 
                 remove: function () {
@@ -599,164 +539,339 @@
 
 
         // =====================================================
-        // COMPROBAR COMPATIBILIDAD WEBXR
+        // =====================================================
+        //
+        //       COLOCACIÓN AR SIMPLE Y ESTABLE
+        //
+        // =====================================================
+        // =====================================================
+        //
+        // A-Frame hace:
+        //
+        // cámara
+        //   ↓
+        // Hit Test
+        //   ↓
+        // retículo
+        //
+        // Nosotros hacemos SOLAMENTE:
+        //
+        // usuario toca
+        //   ↓
+        // copiar posición del retículo
+        //   ↓
+        // CAD aparece
+        //   ↓
+        // bloquear posición
+        //
+        //
+        // NO HAY:
+        //
+        // XRAnchor manual
+        // requestHitTestSource manual
+        // getPose manual
+        // tick AR
+        // dom-overlay
+        // panel HTML
+        //
         // =====================================================
 
-        async function comprobarXR() {
+
+        AFRAME.registerComponent(
+            'colocacion-ar',
+            {
+
+                init: function () {
 
 
-            const webxr =
-                document.getElementById(
-                    'estadoWebXR'
-                );
+                    this.escena =
+                        this.el;
 
 
-            const vr =
-                document.getElementById(
-                    'estadoVR'
-                );
-
-
-            const ar =
-                document.getElementById(
-                    'estadoAR'
-                );
-
-
-
-            if (!navigator.xr) {
-
-
-                webxr.innerHTML =
-                    'WebXR: no disponible';
-
-                webxr.className =
-                    'error';
-
-
-                vr.innerHTML =
-                    'VR: no disponible';
-
-                vr.className =
-                    'error';
-
-
-                ar.innerHTML =
-                    'AR: no disponible';
-
-                ar.className =
-                    'error';
-
-
-                return;
-
-            }
-
-
-
-            webxr.innerHTML =
-                'WebXR: disponible';
-
-            webxr.className =
-                'ok';
-
-
-
-            // =================================================
-            // VR
-            // =================================================
-
-            try {
-
-
-                const soportaVR =
-                    await navigator.xr
-                        .isSessionSupported(
-                            'immersive-vr'
+                    this.modelo =
+                        document.getElementById(
+                            'modeloColocable'
                         );
 
 
-                vr.innerHTML =
-                    soportaVR
-                    ?
-                    'VR: compatible'
-                    :
-                    'VR: no compatible';
-
-
-                vr.className =
-                    soportaVR
-                    ?
-                    'ok'
-                    :
-                    'error';
-
-
-            }
-
-            catch (error) {
-
-
-                vr.innerHTML =
-                    'VR: error';
-
-                vr.className =
-                    'error';
-
-            }
+                    this.colocado =
+                        false;
 
 
 
-            // =================================================
-            // AR
-            // =================================================
+                    // =========================================
+                    // POSICIÓN ORIGINAL
+                    // =========================================
 
-            try {
-
-
-                const soportaAR =
-                    await navigator.xr
-                        .isSessionSupported(
-                            'immersive-ar'
+                    this.posicionOriginal =
+                        new THREE.Vector3(
+                            0,
+                            0,
+                            -3
                         );
 
 
-                ar.innerHTML =
-                    soportaAR
-                    ?
-                    'AR: compatible'
-                    :
-                    'AR: no compatible';
+
+                    // =========================================
+                    // ENTRAR EN AR
+                    // =========================================
+
+                    this.escena.addEventListener(
+                        'enter-vr',
+                        () => {
 
 
-                ar.className =
-                    soportaAR
-                    ?
-                    'ok'
-                    :
-                    'error';
+                            if (
+                                !this.escena.is(
+                                    'ar-mode'
+                                )
+                            ) {
 
+                                return;
+
+                            }
+
+
+                            // Nueva sesión.
+
+                            this.colocado =
+                                false;
+
+
+                            // Ocultar CAD hasta
+                            // seleccionar superficie.
+
+                            this.modelo.object3D.visible =
+                                false;
+
+
+                            // Reactivar Hit Test.
+
+                            this.escena.setAttribute(
+
+                                'ar-hit-test',
+
+                                'enabled',
+
+                                true
+
+                            );
+
+                        }
+                    );
+
+
+
+                    // =========================================
+                    // USUARIO SELECCIONA UNA SUPERFICIE
+                    // =========================================
+
+                    this.escena.addEventListener(
+                        'ar-hit-test-select',
+                        (evento) => {
+
+
+                            // Solo AR.
+
+                            if (
+                                !this.escena.is(
+                                    'ar-mode'
+                                )
+                            ) {
+
+                                return;
+
+                            }
+
+
+
+                            // Solo una colocación.
+
+                            if (
+                                this.colocado
+                            ) {
+
+                                return;
+
+                            }
+
+
+
+                            const detalle =
+                                evento.detail;
+
+
+
+                            if (
+                                !detalle ||
+                                !detalle.position
+                            ) {
+
+                                return;
+
+                            }
+
+
+
+                            // =================================
+                            // COPIAR POSICIÓN
+                            // =================================
+
+                            this.modelo.object3D
+                                .position
+                                .copy(
+                                    detalle.position
+                                );
+
+
+
+                            /*
+                            NO copiamos la rotación del
+                            Hit Test.
+
+                            El brazo conserva verticalidad.
+
+                            La rotación lateral está dentro
+                            del hijo robotCAD.
+                            */
+
+
+
+                            // =================================
+                            // MOSTRAR MODELO
+                            // =================================
+
+                            this.modelo.object3D.visible =
+                                true;
+
+
+
+                            // =================================
+                            // BLOQUEAR
+                            // =================================
+
+                            this.colocado =
+                                true;
+
+
+
+                            /*
+                            Ya no necesitamos buscar
+                            superficies.
+
+                            Como ar-hit-test NO tiene
+                            target, no hay anchor automático
+                            asociado al GLB.
+                            */
+
+                            this.escena.setAttribute(
+
+                                'ar-hit-test',
+
+                                'enabled',
+
+                                false
+
+                            );
+
+                        }
+                    );
+
+
+
+                    // =========================================
+                    // SALIR DE XR
+                    // =========================================
+
+                    this.escena.addEventListener(
+                        'exit-vr',
+                        () => {
+
+
+                            this.colocado =
+                                false;
+
+
+
+                            // Restaurar posición normal.
+
+                            this.modelo.object3D
+                                .position
+                                .copy(
+                                    this.posicionOriginal
+                                );
+
+
+                            this.modelo.object3D
+                                .quaternion
+                                .identity();
+
+
+                            this.modelo.object3D.visible =
+                                true;
+
+
+
+                            // Dejar listo para próxima sesión.
+
+                            this.escena.setAttribute(
+
+                                'ar-hit-test',
+
+                                'enabled',
+
+                                true
+
+                            );
+
+                        }
+                    );
+
+                }
 
             }
+        );
 
-            catch (error) {
 
 
-                ar.innerHTML =
-                    'AR: error';
+        // =====================================================
+        // MENSAJES DE CONSOLA PARA EL GLB
+        // =====================================================
 
-                ar.className =
-                    'error';
+        AFRAME.registerComponent(
+            'estado-modelo',
+            {
+
+                init: function () {
+
+
+                    this.el.addEventListener(
+                        'model-loaded',
+                        () => {
+
+                            console.log(
+                                'CAD cargado correctamente.'
+                            );
+
+                        }
+                    );
+
+
+                    this.el.addEventListener(
+                        'model-error',
+                        (evento) => {
+
+                            console.error(
+                                'Error cargando CAD:',
+                                evento.detail
+                            );
+
+                        }
+                    );
+
+                }
 
             }
-
-        }
-
-
-
-        window.addEventListener(
-            'load',
-            comprobarXR
         );
 
 
@@ -771,124 +886,68 @@
 
 
 <!-- =========================================================
-     PANEL NORMAL
+     =========================================================
      
-     IMPORTANTE:
+                 ESCENA PRINCIPAL
      
-     YA NO SE MODIFICA DURANTE AR.
-     NO SE OCULTA.
-     NO SE CAMBIA.
-     NO HAY setTimeout.
-     NO HAY dom-overlay.
-========================================================= -->
-
-<div id="overlay">
-
-
-    <div id="titulo">
-
-        MODELO CAD INDUSTRIAL XR
-
-    </div>
-
-
-
-    <div
-        id="estadoWebXR"
-        class="esperando">
-
-        WebXR: comprobando...
-
-    </div>
-
-
-
-    <div
-        id="estadoVR"
-        class="esperando">
-
-        VR: comprobando...
-
-    </div>
-
-
-
-    <div
-        id="estadoAR"
-        class="esperando">
-
-        AR: comprobando...
-
-    </div>
-
-
-
-    <div
-        id="estadoModelo"
-        class="esperando">
-
-        Modelo CAD: cargando...
-
-    </div>
-
-
-
-    <div id="controlesPC">
-
-        <b>Controles PC</b>
-
-        <br>
-
-        W / S = adelante / atrás
-
-        <br>
-
-        A / D = izquierda / derecha
-
-        <br>
-
-        E = subir
-
-        <br>
-
-        Q = bajar / agacharse
-
-        <br>
-
-        Mouse = mirar
-
-    </div>
-
-
-</div>
-
-
-
-<!-- =========================================================
-     ESCENA
+     =========================================================
 ========================================================= -->
 
 <a-scene
 
+
+    <!-- =====================================================
+         BOTONES AR + VR
+    ====================================================== -->
 
     xr-mode-ui="
         XRMode: xr
     "
 
 
+
+    <!-- =====================================================
+         WEBXR
+
+         hit-test es opcional para no impedir VR.
+    ====================================================== -->
+
     webxr="
-        requiredFeatures: hit-test;
-        referenceSpaceType: local;
+        optionalFeatures: hit-test;
     "
 
+
+
+    <!-- =====================================================
+         HIT TEST
+
+         MUY IMPORTANTE:
+
+         NO HAY target.
+
+         type: map
+
+         Esto evita calcular la huella del GLB.
+    ====================================================== -->
 
     ar-hit-test="
-        target: #objetoXR;
-        type: footprint;
+        type: map;
+        mapSize: 0.25 0.25;
+        enabled: true;
     "
 
 
+
+    colocacion-ar
+
+
+
+    <!-- =====================================================
+         RENDER SIMPLE
+    ====================================================== -->
+
     renderer="
+        antialias: true;
         colorManagement: true;
         alpha: true;
     "
@@ -918,8 +977,8 @@
 
     <!-- =====================================================
          ILUMINACIÓN
-         
-         Dejamos solo dos luces para reducir carga.
+
+         MÍNIMA PARA MEJOR RENDIMIENTO
     ====================================================== -->
 
     <a-light
@@ -928,7 +987,7 @@
 
         color="#FFFFFF"
 
-        intensity="1">
+        intensity="1.1">
 
     </a-light>
 
@@ -940,7 +999,7 @@
 
         color="#FFFFFF"
 
-        intensity="0.8"
+        intensity="0.75"
 
         position="-3 5 3">
 
@@ -949,21 +1008,33 @@
 
 
     <!-- =====================================================
-         CAD
+         =====================================================
          
-         MISMO MÉTODO QUE EL CUBO QUE FUNCIONÓ.
+                     MODELO CAD
+         
+         =====================================================
     ====================================================== -->
+
+
+    <!--
+    Este elemento es el que cambia de posición
+    cuando seleccionamos una superficie.
+    -->
 
     <a-entity
 
-        id="objetoXR"
+        id="modeloColocable"
 
         position="0 0 -3"
 
-        hide-on-enter-ar
+        visible="true"
     >
 
 
+
+        <!-- =================================================
+             BRAZO ROBÓTICO
+        ================================================== -->
 
         <a-entity
 
@@ -971,13 +1042,24 @@
 
             gltf-model="#modeloIndustrial"
 
-            control-modelo
+            estado-modelo
 
-            position="0 0 0"
+
+            <!--
+            Vista lateral.
+            -->
 
             rotation="0 90 0"
 
-            scale="0.003 0.003 0.003">
+
+            <!--
+            Tamaño tipo maqueta.
+            -->
+
+            scale="0.003 0.003 0.003"
+
+
+            position="0 0 0">
 
         </a-entity>
 
@@ -987,7 +1069,18 @@
 
 
     <!-- =====================================================
+         =====================================================
+         
+                     ENTORNO PC / VR
+         
+         =====================================================
+    ====================================================== -->
+
+
+    <!-- =====================================================
          PISO
+
+         A-Frame lo oculta automáticamente en AR.
     ====================================================== -->
 
     <a-plane
@@ -1010,6 +1103,8 @@
 
     <!-- =====================================================
          CIELO
+
+         No queremos verlo en AR.
     ====================================================== -->
 
     <a-sky
@@ -1023,45 +1118,52 @@
 
 
     <!-- =====================================================
-         RIG
-
-         En lugar de comenzar el RIG a 1.6 m,
-         dejamos el RIG en cero.
-
-         La cámara de PC es la que comienza a 1.6 m.
-
-         Esto es importante porque el padre de la cámara
-         no introduce un desplazamiento adicional en XR.
+         =====================================================
+         
+                         CÁMARA
+         
+         =====================================================
     ====================================================== -->
 
-    <a-entity
 
-        id="rig"
+    <a-camera
 
-        position="0 0 0"
+        id="camaraPrincipal"
+
+
+        <!--
+        Altura inicial para computador.
+        -->
+
+        position="0 1.6 0"
+
+
+
+        <!--
+        PC + MÓVIL IMU
+        -->
+
+        look-controls="
+            enabled: true;
+            mouseEnabled: true;
+            touchEnabled: true;
+            magicWindowTrackingEnabled: true;
+        "
+
+
+
+        <!--
+        PC
+        -->
 
         movimiento-pc="
-            velocidad: 2;
+            velocidad: 2.0;
             velocidadVertical: 1.5;
-            alturaMinima: -1.35;
-            alturaMaxima: 3.4;
-        "
-    >
+            alturaMinima: 0.25;
+            alturaMaxima: 5.0;
+        ">
 
-
-
-        <a-camera
-
-            id="camaraPrincipal"
-
-            position="0 1.6 0"
-
-            look-controls>
-
-        </a-camera>
-
-
-    </a-entity>
+    </a-camera>
 
 
 
