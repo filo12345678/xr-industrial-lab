@@ -7,15 +7,17 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0,
-                 maximum-scale=1.0, user-scalable=no"
+        content="width=device-width,
+                 initial-scale=1.0,
+                 maximum-scale=1.0,
+                 user-scalable=no"
     >
 
-    <title>Laboratorio XR - A-Frame</title>
+    <title>Laboratorio XR - Celda Industrial</title>
 
 
     <!-- =====================================================
-         A-FRAME
+         A-FRAME 1.8.0
     ====================================================== -->
 
     <script
@@ -24,7 +26,7 @@
 
 
     <!-- =====================================================
-         ESTILO DEL PANEL
+         ESTILOS
     ====================================================== -->
 
     <style>
@@ -43,7 +45,7 @@
             top: 15px;
             left: 15px;
 
-            width: 285px;
+            width: 290px;
 
             padding: 14px;
 
@@ -96,7 +98,7 @@
 
             border-top: 1px solid #777;
 
-            color: #ffffff;
+            color: white;
         }
 
     </style>
@@ -105,82 +107,7 @@
     <script>
 
         // =====================================================
-        // OCULTAR OBJETOS AL ENTRAR EN AR
-        //
-        // En escritorio los objetos se ven normalmente.
-        // En AR se ocultan hasta que el usuario encuentre
-        // una superficie y toque la pantalla.
-        // =====================================================
-
-        AFRAME.registerComponent(
-            'preparar-ar',
-            {
-
-                init: function () {
-
-                    const objeto =
-                        this.el;
-
-                    const escena =
-                        objeto.sceneEl;
-
-
-                    escena.addEventListener(
-                        'enter-vr',
-                        function () {
-
-                            if (
-                                escena.is('ar-mode')
-                            ) {
-
-                                objeto.setAttribute(
-                                    'visible',
-                                    false
-                                );
-
-
-                                const texto =
-                                    document.getElementById(
-                                        'instruccionAR'
-                                    );
-
-
-                                if (texto) {
-
-                                    texto.innerHTML =
-                                        "Mueve lentamente el teléfono " +
-                                        "para detectar una superficie.<br>" +
-                                        "Cuando aparezca el retículo, " +
-                                        "<b>toca la pantalla</b>.";
-
-                                }
-
-                            }
-
-                        }
-                    );
-
-
-                    escena.addEventListener(
-                        'exit-vr',
-                        function () {
-
-                            objeto.setAttribute(
-                                'visible',
-                                true
-                            );
-
-                        }
-                    );
-
-                }
-
-            }
-        );
-
-
-        // =====================================================
-        // MENSAJES DEL HIT TEST
+        // ESTADO DEL HIT TEST
         // =====================================================
 
         AFRAME.registerComponent(
@@ -189,17 +116,27 @@
 
                 init: function () {
 
-                    const escena =
-                        this.el;
+                    const escena = this.el;
 
 
                     escena.addEventListener(
                         'ar-hit-test-start',
                         function () {
 
-                            console.log(
-                                "Hit Test iniciado"
-                            );
+                            const texto =
+                                document.getElementById(
+                                    'instruccionAR'
+                                );
+
+
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "Buscando superficies..." +
+                                    "<br>" +
+                                    "Mueve lentamente el dispositivo.";
+
+                            }
 
                         }
                     );
@@ -208,11 +145,6 @@
                     escena.addEventListener(
                         'ar-hit-test-achieved',
                         function () {
-
-                            console.log(
-                                "Superficie detectada"
-                            );
-
 
                             const texto =
                                 document.getElementById(
@@ -225,9 +157,10 @@
                                 texto.innerHTML =
                                     "<span class='ok'>" +
                                     "Superficie detectada." +
-                                    "</span><br>" +
-                                    "Toca la pantalla para " +
-                                    "colocar el objeto.";
+                                    "</span>" +
+                                    "<br>" +
+                                    "Toca la pantalla para colocar " +
+                                    "la celda industrial.";
 
                             }
 
@@ -239,11 +172,6 @@
                         'ar-hit-test-select',
                         function () {
 
-                            console.log(
-                                "Objeto colocado"
-                            );
-
-
                             const texto =
                                 document.getElementById(
                                     'instruccionAR'
@@ -254,10 +182,11 @@
 
                                 texto.innerHTML =
                                     "<span class='ok'>" +
-                                    "Objeto colocado correctamente." +
-                                    "</span><br>" +
+                                    "Celda colocada correctamente." +
+                                    "</span>" +
+                                    "<br>" +
                                     "Puedes apuntar a otra superficie " +
-                                    "y tocar nuevamente para moverlo.";
+                                    "y tocar nuevamente.";
 
                             }
 
@@ -316,7 +245,6 @@
 
 
                 return;
-
             }
 
 
@@ -327,17 +255,17 @@
                 "ok";
 
 
-            // -------------------------------------------------
+            // =================================================
             // VR
-            // -------------------------------------------------
+            // =================================================
 
             try {
 
                 const soportaVR =
                     await navigator.xr
-                        .isSessionSupported(
-                            "immersive-vr"
-                        );
+                    .isSessionSupported(
+                        "immersive-vr"
+                    );
 
 
                 estadoVR.innerHTML =
@@ -368,17 +296,17 @@
             }
 
 
-            // -------------------------------------------------
+            // =================================================
             // AR
-            // -------------------------------------------------
+            // =================================================
 
             try {
 
                 const soportaAR =
                     await navigator.xr
-                        .isSessionSupported(
-                            "immersive-ar"
-                        );
+                    .isSessionSupported(
+                        "immersive-ar"
+                    );
 
 
                 estadoAR.innerHTML =
@@ -421,6 +349,7 @@
 </head>
 
 
+
 <body>
 
 
@@ -431,7 +360,7 @@
 <div id="overlay">
 
     <div id="titulo">
-        LABORATORIO XR
+        CELDA INDUSTRIAL XR
     </div>
 
 
@@ -464,7 +393,7 @@
 
     <div id="instruccionAR">
 
-        En modo AR podrás colocar los objetos
+        En AR podrás colocar la celda
         sobre una superficie real.
 
     </div>
@@ -474,7 +403,7 @@
 
 
 <!-- =========================================================
-     ESCENA
+     ESCENA PRINCIPAL
 ========================================================= -->
 
 <a-scene
@@ -498,7 +427,6 @@
 
     renderer="
         colorManagement: true;
-        physicallyCorrectLights: true;
         alpha: true;
     "
 
@@ -510,7 +438,7 @@
 
 
     <!-- =====================================================
-         LUCES
+         ILUMINACIÓN
     ====================================================== -->
 
     <a-light
@@ -519,7 +447,7 @@
 
         color="#FFFFFF"
 
-        intensity="0.9">
+        intensity="0.85">
 
     </a-light>
 
@@ -539,86 +467,798 @@
 
 
     <!-- =====================================================
-         GRUPO DE OBJETOS
-         
-         ESTE ES EL ELEMENTO QUE SE COLOCARÁ SOBRE
-         LA SUPERFICIE DETECTADA.
+         MODELO INDUSTRIAL COMPLETO
+
+         Este es el grupo que moverá WebXR Hit Test.
     ====================================================== -->
 
     <a-entity
 
         id="objetoXR"
 
-        preparar-ar
+        hide-on-enter-ar
 
-        position="0 0 -3"
+        position="0 0 -4"
 
-        scale="0.5 0.5 0.5"
+        scale="0.45 0.45 0.45"
     >
 
 
-      
-<!-- BASE -->
-<a-box
-    position="0 0.10 0"
-    width="5"
-    height="0.20"
-    depth="2.5"
-    color="#555555"
-    shadow>
-</a-box>
+        <!-- =================================================
+             PISO DE LA CELDA
+        ================================================== -->
+
+        <a-plane
+
+            position="0 0.02 0"
+
+            rotation="-90 0 0"
+
+            width="7.5"
+
+            height="4.5"
+
+            color="#B0BEC5"
+
+            material="
+                roughness: 0.9
+            "
+
+            shadow="receive: true">
+
+        </a-plane>
 
 
-<!-- CUBO -->
-<a-box
-    position="-1.5 0.7 0"
-    rotation="0 45 0"
-    width="1"
-    height="1"
-    depth="1"
-    color="#4CC3D9"
-    shadow>
-</a-box>
+
+        <!-- =================================================
+             BANDA TRANSPORTADORA
+        ================================================== -->
+
+        <a-entity id="bandaTransportadora">
 
 
-<!-- ESFERA -->
-<a-sphere
-    position="0 0.9 0"
-    radius="0.65"
-    color="#EF2D5E"
-    shadow>
-</a-sphere>
+            <!-- =============================================
+                 ESTRUCTURA PRINCIPAL
+            ============================================== -->
+
+            <a-box
+
+                position="-0.2 1 0"
+
+                width="5"
+
+                height="0.25"
+
+                depth="1.5"
+
+                color="#455A64"
+
+                shadow>
+
+            </a-box>
 
 
-<!-- CILINDRO -->
-<a-cylinder
-    position="1.6 0.75 0"
-    radius="0.45"
-    height="1.3"
-    color="#FFC65D"
-    shadow>
-</a-cylinder>
+
+            <!-- =============================================
+                 CINTA NEGRA
+            ============================================== -->
+
+            <a-box
+
+                position="-0.2 1.17 0"
+
+                width="4.65"
+
+                height="0.08"
+
+                depth="1.18"
+
+                color="#212121"
+
+                shadow>
+
+            </a-box>
+
+
+
+            <!-- =============================================
+                 LATERAL IZQUIERDO
+            ============================================== -->
+
+            <a-box
+
+                position="-0.2 1.32 -0.68"
+
+                width="5"
+
+                height="0.15"
+
+                depth="0.12"
+
+                color="#78909C">
+
+            </a-box>
+
+
+
+            <!-- =============================================
+                 LATERAL DERECHO
+            ============================================== -->
+
+            <a-box
+
+                position="-0.2 1.32 0.68"
+
+                width="5"
+
+                height="0.15"
+
+                depth="0.12"
+
+                color="#78909C">
+
+            </a-box>
+
+
+
+            <!-- =============================================
+                 RODILLO 1
+            ============================================== -->
+
+            <a-cylinder
+
+                position="-2.45 1.18 0"
+
+                rotation="90 0 0"
+
+                radius="0.23"
+
+                height="1.35"
+
+                color="#90A4AE"
+
+                metalness="0.6">
+
+            </a-cylinder>
+
+
+
+            <!-- =============================================
+                 RODILLO 2
+            ============================================== -->
+
+            <a-cylinder
+
+                position="2.05 1.18 0"
+
+                rotation="90 0 0"
+
+                radius="0.23"
+
+                height="1.35"
+
+                color="#90A4AE"
+
+                metalness="0.6">
+
+            </a-cylinder>
+
+
+
+            <!-- =============================================
+                 RODILLOS INTERMEDIOS
+            ============================================== -->
+
+            <a-cylinder
+                position="-1.5 1.10 0"
+                rotation="90 0 0"
+                radius="0.09"
+                height="1.15"
+                color="#607D8B">
+            </a-cylinder>
+
+
+            <a-cylinder
+                position="-0.6 1.10 0"
+                rotation="90 0 0"
+                radius="0.09"
+                height="1.15"
+                color="#607D8B">
+            </a-cylinder>
+
+
+            <a-cylinder
+                position="0.3 1.10 0"
+                rotation="90 0 0"
+                radius="0.09"
+                height="1.15"
+                color="#607D8B">
+            </a-cylinder>
+
+
+            <a-cylinder
+                position="1.2 1.10 0"
+                rotation="90 0 0"
+                radius="0.09"
+                height="1.15"
+                color="#607D8B">
+            </a-cylinder>
+
+
+
+            <!-- =============================================
+                 PATAS
+            ============================================== -->
+
+            <a-box
+
+                position="-2.1 0.48 -0.55"
+
+                width="0.18"
+
+                height="0.95"
+
+                depth="0.18"
+
+                color="#607D8B">
+
+            </a-box>
+
+
+            <a-box
+
+                position="-2.1 0.48 0.55"
+
+                width="0.18"
+
+                height="0.95"
+
+                depth="0.18"
+
+                color="#607D8B">
+
+            </a-box>
+
+
+            <a-box
+
+                position="1.7 0.48 -0.55"
+
+                width="0.18"
+
+                height="0.95"
+
+                depth="0.18"
+
+                color="#607D8B">
+
+            </a-box>
+
+
+            <a-box
+
+                position="1.7 0.48 0.55"
+
+                width="0.18"
+
+                height="0.95"
+
+                depth="0.18"
+
+                color="#607D8B">
+
+            </a-box>
+
+
+
+            <!-- =============================================
+                 TRAVESAÑOS
+            ============================================== -->
+
+            <a-box
+
+                position="-2.1 0.25 0"
+
+                width="0.15"
+
+                height="0.15"
+
+                depth="1.15"
+
+                color="#455A64">
+
+            </a-box>
+
+
+            <a-box
+
+                position="1.7 0.25 0"
+
+                width="0.15"
+
+                height="0.15"
+
+                depth="1.15"
+
+                color="#455A64">
+
+            </a-box>
+
+
+
+            <!-- =============================================
+                 CAJA FIJA
+            ============================================== -->
+
+            <a-box
+
+                position="-1.7 1.55 0"
+
+                width="0.6"
+
+                height="0.65"
+
+                depth="0.55"
+
+                color="#FF9800"
+
+                shadow>
+
+            </a-box>
+
+
+
+            <!-- =============================================
+                 PRODUCTO EN MOVIMIENTO
+            ============================================== -->
+
+            <a-box
+
+                position="-1.1 1.55 0"
+
+                width="0.55"
+
+                height="0.65"
+
+                depth="0.55"
+
+                color="#FFC107"
+
+                shadow
+
+                animation="
+                    property: position;
+                    from: -1.2 1.55 0;
+                    to: 1.55 1.55 0;
+                    dur: 5000;
+                    easing: linear;
+                    loop: true;
+                ">
+
+            </a-box>
+
+
+        </a-entity>
+
+
+
+        <!-- =================================================
+             SENSOR FOTOELÉCTRICO
+        ================================================== -->
+
+        <a-entity
+            id="sensorFotoelectrico"
+        >
+
+
+            <!-- SOPORTE VERTICAL -->
+
+            <a-cylinder
+
+                position="0.55 1.5 -1"
+
+                radius="0.07"
+
+                height="1"
+
+                color="#263238">
+
+            </a-cylinder>
+
+
+
+            <!-- BRAZO -->
+
+            <a-box
+
+                position="0.55 1.97 -0.65"
+
+                width="0.14"
+
+                height="0.14"
+
+                depth="0.7"
+
+                color="#263238">
+
+            </a-box>
+
+
+
+            <!-- CABEZA DEL SENSOR -->
+
+            <a-box
+
+                position="0.55 1.97 -0.27"
+
+                width="0.28"
+
+                height="0.24"
+
+                depth="0.25"
+
+                color="#37474F">
+
+            </a-box>
+
+
+
+            <!-- INDICADOR DEL SENSOR -->
+
+            <a-sphere
+
+                position="0.55 1.98 -0.13"
+
+                radius="0.075"
+
+                color="#00E676"
+
+                animation="
+                    property: material.emissiveIntensity;
+                    from: 0;
+                    to: 1;
+                    dur: 700;
+                    dir: alternate;
+                    loop: true;
+                "
+
+                material="
+                    emissive: #00E676;
+                    emissiveIntensity: 0.8;
+                ">
+
+            </a-sphere>
+
+
+
+            <!-- HAZ DEL SENSOR -->
+
+            <a-box
+
+                position="0.55 1.63 0"
+
+                width="0.035"
+
+                height="0.035"
+
+                depth="1.25"
+
+                color="#F44336"
+
+                material="
+                    transparent: true;
+                    opacity: 0.55;
+                    emissive: #F44336;
+                ">
+
+            </a-box>
+
+
+        </a-entity>
+
+
+
+        <!-- =================================================
+             PANEL DE CONTROL
+        ================================================== -->
+
+        <a-entity
+
+            id="panelControl"
+
+            position="2.75 0 1.15"
+        >
+
+
+            <!-- POSTE -->
+
+            <a-box
+
+                position="0 0.65 0"
+
+                width="0.18"
+
+                height="1.3"
+
+                depth="0.18"
+
+                color="#455A64">
+
+            </a-box>
+
+
+
+            <!-- GABINETE -->
+
+            <a-box
+
+                position="0 1.55 0"
+
+                width="1"
+
+                height="1.15"
+
+                depth="0.55"
+
+                color="#607D8B"
+
+                shadow>
+
+            </a-box>
+
+
+
+            <!-- MARCO DE PANTALLA -->
+
+            <a-box
+
+                position="0 1.72 -0.29"
+
+                width="0.68"
+
+                height="0.43"
+
+                depth="0.04"
+
+                color="#263238">
+
+            </a-box>
+
+
+
+            <!-- PANTALLA -->
+
+            <a-box
+
+                position="0 1.72 -0.32"
+
+                width="0.58"
+
+                height="0.33"
+
+                depth="0.025"
+
+                color="#2196F3"
+
+                material="
+                    emissive: #1565C0;
+                    emissiveIntensity: 0.4;
+                ">
+
+            </a-box>
+
+
+
+            <!-- BOTÓN VERDE -->
+
+            <a-cylinder
+
+                position="-0.22 1.30 -0.32"
+
+                rotation="90 0 0"
+
+                radius="0.09"
+
+                height="0.05"
+
+                color="#00E676">
+
+            </a-cylinder>
+
+
+
+            <!-- BOTÓN ROJO -->
+
+            <a-cylinder
+
+                position="0.22 1.30 -0.32"
+
+                rotation="90 0 0"
+
+                radius="0.09"
+
+                height="0.05"
+
+                color="#F44336">
+
+            </a-cylinder>
+
+
+
+            <!-- BALIZA -->
+
+            <a-cylinder
+
+                position="0 2.25 0"
+
+                radius="0.11"
+
+                height="0.35"
+
+                color="#FFC107"
+
+                material="
+                    emissive: #FFC107;
+                    emissiveIntensity: 0.6;
+                ">
+
+            </a-cylinder>
+
+
+        </a-entity>
+
+
+
+        <!-- =================================================
+             MESA / ZONA DE RECEPCIÓN
+        ================================================== -->
+
+        <a-entity
+
+            id="zonaRecepcion"
+
+            position="2.7 0 -0.25"
+        >
+
+
+            <!-- TABLERO -->
+
+            <a-box
+
+                position="0 0.85 0"
+
+                width="1.15"
+
+                height="0.15"
+
+                depth="1.4"
+
+                color="#CFD8DC"
+
+                shadow>
+
+            </a-box>
+
+
+
+            <!-- PATAS -->
+
+            <a-box
+                position="-0.45 0.4 -0.5"
+                width="0.15"
+                height="0.8"
+                depth="0.15"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="0.45 0.4 -0.5"
+                width="0.15"
+                height="0.8"
+                depth="0.15"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="-0.45 0.4 0.5"
+                width="0.15"
+                height="0.8"
+                depth="0.15"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="0.45 0.4 0.5"
+                width="0.15"
+                height="0.8"
+                depth="0.15"
+                color="#607D8B">
+            </a-box>
+
+
+
+            <!-- PRODUCTO TERMINADO -->
+
+            <a-box
+
+                position="0 1.2 0"
+
+                width="0.55"
+
+                height="0.55"
+
+                depth="0.55"
+
+                color="#8BC34A"
+
+                shadow>
+
+            </a-box>
+
+
+        </a-entity>
+
+
+
+        <!-- =================================================
+             MARCAS DE SEGURIDAD
+        ================================================== -->
+
+        <a-box
+
+            position="0 -0.01 -1.7"
+
+            width="6.2"
+
+            height="0.025"
+
+            depth="0.08"
+
+            color="#FFC107">
+
+        </a-box>
+
+
+        <a-box
+
+            position="0 -0.01 1.7"
+
+            width="6.2"
+
+            height="0.025"
+
+            depth="0.08"
+
+            color="#FFC107">
+
+        </a-box>
+
+
+    </a-entity>
 
 
 
     <!-- =====================================================
-         PISO PARA MODO NORMAL / VR
-
-         Se mantiene como referencia visual cuando no estamos
-         usando AR.
+         PISO GENERAL
+         SOLO SE VE FUERA DE AR
     ====================================================== -->
 
     <a-plane
+
+        hide-on-enter-ar
 
         position="0 0 -4"
 
         rotation="-90 0 0"
 
-        width="12"
+        width="14"
 
-        height="12"
+        height="14"
 
-        color="#7BC8A4"
+        color="#78909C"
 
         shadow="receive: true">
 
@@ -628,11 +1268,14 @@
 
     <!-- =====================================================
          CIELO
+         SE OCULTA AL ENTRAR EN AR
     ====================================================== -->
 
     <a-sky
 
-        color="#ECECEC">
+        hide-on-enter-ar
+
+        color="#DCE6EA">
 
     </a-sky>
 
