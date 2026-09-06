@@ -30,10 +30,15 @@
 
         html,
         body {
+
             margin: 0;
+
             width: 100%;
+
             height: 100%;
+
             overflow: hidden;
+
             font-family: Arial, sans-serif;
         }
 
@@ -43,9 +48,10 @@
             position: fixed;
 
             top: 15px;
+
             left: 15px;
 
-            width: 300px;
+            width: 310px;
 
             padding: 14px;
 
@@ -78,21 +84,34 @@
 
 
         .ok {
+
             color: #00ff88;
         }
 
 
         .error {
+
             color: #ff5555;
         }
 
 
         .esperando {
+
             color: #ffcc00;
         }
 
 
         #estadoModelo {
+
+            margin-top: 10px;
+
+            padding-top: 10px;
+
+            border-top: 1px solid #777;
+        }
+
+
+        #controlesPC {
 
             margin-top: 10px;
 
@@ -119,7 +138,7 @@
 
 
         // =====================================================
-        // CONTROL DE CARGA DEL MODELO GLB
+        // CARGA DEL MODELO GLB
         // =====================================================
 
         AFRAME.registerComponent(
@@ -136,20 +155,24 @@
                         function () {
 
                             console.log(
-                                "Modelo GLB cargado correctamente"
+                                'Modelo GLB cargado correctamente'
                             );
 
 
                             const estado =
                                 document.getElementById(
-                                    "estadoModelo"
+                                    'estadoModelo'
                                 );
 
 
-                            estado.innerHTML =
-                                "<span class='ok'>" +
-                                "Modelo CAD: cargado correctamente" +
-                                "</span>";
+                            if (estado) {
+
+                                estado.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Modelo CAD: cargado correctamente" +
+                                    "</span>";
+
+                            }
 
                         }
                     );
@@ -160,21 +183,25 @@
                         function (evento) {
 
                             console.error(
-                                "Error cargando GLB:",
+                                'Error cargando modelo:',
                                 evento.detail
                             );
 
 
                             const estado =
                                 document.getElementById(
-                                    "estadoModelo"
+                                    'estadoModelo'
                                 );
 
 
-                            estado.innerHTML =
-                                "<span class='error'>" +
-                                "Modelo CAD: error al cargar" +
-                                "</span>";
+                            if (estado) {
+
+                                estado.innerHTML =
+                                    "<span class='error'>" +
+                                    "Modelo CAD: error al cargar" +
+                                    "</span>";
+
+                            }
 
                         }
                     );
@@ -187,21 +214,275 @@
 
 
         // =====================================================
-        // COLOCACIÓN FIJA DEL MODELO EN REALIDAD AUMENTADA
+        // OCULTAR ELEMENTOS EN MODO AR
+        // =====================================================
+
+        AFRAME.registerComponent(
+            'ocultar-en-ar',
+            {
+
+                init: function () {
+
+                    const elemento = this.el;
+
+                    const escena =
+                        elemento.sceneEl;
+
+
+                    escena.addEventListener(
+                        'enter-vr',
+                        function () {
+
+                            if (
+                                escena.is('ar-mode')
+                            ) {
+
+                                elemento.setAttribute(
+                                    'visible',
+                                    false
+                                );
+
+                            }
+
+                        }
+                    );
+
+
+                    escena.addEventListener(
+                        'exit-vr',
+                        function () {
+
+                            elemento.setAttribute(
+                                'visible',
+                                true
+                            );
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        // =====================================================
+        // MOVIMIENTO VERTICAL PARA PC
         //
-        // IMPORTANTE:
-        //
-        // El Hit Test NO mueve directamente el robot.
-        //
-        // Mueve un punto auxiliar invisible.
-        //
-        // Cuando el usuario toca la pantalla:
-        //
-        // 1. Se obtiene la posición del punto.
-        // 2. Se copia al robot.
-        // 3. El robot queda BLOQUEADO.
-        //
-        // Por lo tanto puede caminar alrededor de él.
+        // E = SUBIR
+        // Q = BAJAR
+        // =====================================================
+
+        AFRAME.registerComponent(
+            'movimiento-vertical',
+            {
+
+                schema: {
+
+                    velocidad: {
+
+                        type: 'number',
+
+                        default: 1.5
+                    },
+
+
+                    alturaMinima: {
+
+                        type: 'number',
+
+                        default: 0.3
+                    },
+
+
+                    alturaMaxima: {
+
+                        type: 'number',
+
+                        default: 4.0
+                    }
+
+                },
+
+
+                init: function () {
+
+                    this.subiendo = false;
+
+                    this.bajando = false;
+
+
+                    this.presionarTecla =
+                        (event) => {
+
+                            const tecla =
+                                event.key.toLowerCase();
+
+
+                            if (tecla === 'e') {
+
+                                this.subiendo =
+                                    true;
+
+                            }
+
+
+                            if (tecla === 'q') {
+
+                                this.bajando =
+                                    true;
+
+                            }
+
+                        };
+
+
+                    this.soltarTecla =
+                        (event) => {
+
+                            const tecla =
+                                event.key.toLowerCase();
+
+
+                            if (tecla === 'e') {
+
+                                this.subiendo =
+                                    false;
+
+                            }
+
+
+                            if (tecla === 'q') {
+
+                                this.bajando =
+                                    false;
+
+                            }
+
+                        };
+
+
+                    window.addEventListener(
+                        'keydown',
+                        this.presionarTecla
+                    );
+
+
+                    window.addEventListener(
+                        'keyup',
+                        this.soltarTecla
+                    );
+
+                },
+
+
+                tick: function (
+                    tiempo,
+                    delta
+                ) {
+
+
+                    if (!delta) {
+
+                        return;
+                    }
+
+
+                    /*
+                    No modificamos la posición
+                    cuando estamos dentro de XR.
+                    */
+
+                    if (
+                        this.el.sceneEl.is('vr-mode')
+                    ) {
+
+                        return;
+                    }
+
+
+                    const dt =
+                        delta / 1000;
+
+
+                    const posicion =
+                        this.el.object3D.position;
+
+
+
+                    // =========================================
+                    // SUBIR
+                    // =========================================
+
+                    if (this.subiendo) {
+
+                        posicion.y +=
+                            this.data.velocidad *
+                            dt;
+
+                    }
+
+
+
+                    // =========================================
+                    // BAJAR
+                    // =========================================
+
+                    if (this.bajando) {
+
+                        posicion.y -=
+                            this.data.velocidad *
+                            dt;
+
+                    }
+
+
+
+                    // =========================================
+                    // LIMITAR ALTURA
+                    // =========================================
+
+                    posicion.y =
+                        Math.max(
+
+                            this.data.alturaMinima,
+
+                            Math.min(
+
+                                this.data.alturaMaxima,
+
+                                posicion.y
+
+                            )
+
+                        );
+
+                },
+
+
+                remove: function () {
+
+                    window.removeEventListener(
+                        'keydown',
+                        this.presionarTecla
+                    );
+
+
+                    window.removeEventListener(
+                        'keyup',
+                        this.soltarTecla
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        // =====================================================
+        // COLOCACIÓN FIJA DEL MODELO EN AR
         // =====================================================
 
         AFRAME.registerComponent(
@@ -210,58 +491,78 @@
 
                 init: function () {
 
-                    const escena = this.el;
+
+                    const escena =
+                        this.el;
+
 
                     this.modelo =
                         document.getElementById(
-                            "objetoXR"
+                            'objetoXR'
                         );
+
 
                     this.punto =
                         document.getElementById(
-                            "puntoColocacionAR"
+                            'puntoColocacionAR'
                         );
 
 
-                    // Indica si ya colocamos el modelo.
-                    this.colocado = false;
+                    this.colocado =
+                        false;
 
 
 
                     // =================================================
-                    // ENTRAR A AR
+                    // ENTRAR EN AR
                     // =================================================
 
                     escena.addEventListener(
-                        "enter-vr",
+                        'enter-vr',
                         () => {
 
-                            if (!escena.is("ar-mode")) {
+
+                            if (
+                                !escena.is('ar-mode')
+                            ) {
+
                                 return;
+
                             }
 
 
-                            this.colocado = false;
+                            this.colocado =
+                                false;
 
 
-                            // Ocultamos el modelo hasta que el
-                            // usuario seleccione una superficie.
+                            // Ocultar robot mientras
+                            // buscamos superficie.
 
                             this.modelo.setAttribute(
-                                "visible",
+                                'visible',
                                 false
+                            );
+
+
+                            this.punto.setAttribute(
+                                'visible',
+                                true
                             );
 
 
                             const texto =
                                 document.getElementById(
-                                    "instruccionAR"
+                                    'instruccionAR'
                                 );
 
 
-                            texto.innerHTML =
-                                "Mueve lentamente el teléfono.<br>" +
-                                "Busca una mesa o el piso.";
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "Mueve lentamente el teléfono.<br>" +
+                                    "Apunta hacia una mesa o el piso.";
+
+                            }
 
                         }
                     );
@@ -269,33 +570,37 @@
 
 
                     // =================================================
-                    // HIT TEST INICIADO
+                    // COMIENZA HIT TEST
                     // =================================================
 
                     escena.addEventListener(
-                        "ar-hit-test-start",
+                        'ar-hit-test-start',
                         () => {
 
-                            if (!escena.is("ar-mode")) {
-                                return;
-                            }
 
+                            if (
+                                this.colocado
+                            ) {
 
-                            if (this.colocado) {
                                 return;
+
                             }
 
 
                             const texto =
                                 document.getElementById(
-                                    "instruccionAR"
+                                    'instruccionAR'
                                 );
 
 
-                            texto.innerHTML =
-                                "Buscando una superficie..." +
-                                "<br>" +
-                                "Mueve lentamente el dispositivo.";
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "Buscando superficie..." +
+                                    "<br>" +
+                                    "Mueve lentamente el dispositivo.";
+
+                            }
 
                         }
                     );
@@ -303,35 +608,39 @@
 
 
                     // =================================================
-                    // SUPERFICIE ENCONTRADA
+                    // SUPERFICIE DETECTADA
                     // =================================================
 
                     escena.addEventListener(
-                        "ar-hit-test-achieved",
+                        'ar-hit-test-achieved',
                         () => {
 
-                            if (!escena.is("ar-mode")) {
-                                return;
-                            }
 
+                            if (
+                                this.colocado
+                            ) {
 
-                            if (this.colocado) {
                                 return;
+
                             }
 
 
                             const texto =
                                 document.getElementById(
-                                    "instruccionAR"
+                                    'instruccionAR'
                                 );
 
 
-                            texto.innerHTML =
-                                "<span class='ok'>" +
-                                "Superficie detectada." +
-                                "</span>" +
-                                "<br>" +
-                                "Toca una vez para colocar el robot.";
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Superficie detectada." +
+                                    "</span>" +
+                                    "<br>" +
+                                    "Toca la pantalla para fijar el robot.";
+
+                            }
 
                         }
                     );
@@ -339,47 +648,42 @@
 
 
                     // =================================================
-                    // USUARIO TOCA LA SUPERFICIE
+                    // TOCAR PARA COLOCAR
                     // =================================================
 
                     escena.addEventListener(
-                        "ar-hit-test-select",
+                        'ar-hit-test-select',
                         () => {
 
 
-                            // Si no estamos en AR, ignorar.
+                            if (
+                                this.colocado
+                            ) {
 
-                            if (!escena.is("ar-mode")) {
                                 return;
+
                             }
 
 
-                            // Si ya fue colocado, NO moverlo nuevamente.
+                            if (
+                                !escena.is('ar-mode')
+                            ) {
 
-                            if (this.colocado) {
                                 return;
+
                             }
 
-
-                            // Esperamos un frame para asegurarnos
-                            // de que A-Frame haya actualizado primero
-                            // el punto del Hit Test.
 
                             requestAnimationFrame(
                                 () => {
 
 
-                                    // =================================
-                                    // POSICIÓN Y ORIENTACIÓN DEL HIT TEST
-                                    // =================================
-
                                     const posicion =
                                         new THREE.Vector3();
 
 
-                                    const orientacion =
-                                        new THREE.Quaternion();
-
+                                    // Obtener posición
+                                    // de la superficie.
 
                                     this.punto.object3D
                                         .getWorldPosition(
@@ -387,16 +691,10 @@
                                         );
 
 
-                                    this.punto.object3D
-                                        .getWorldQuaternion(
-                                            orientacion
-                                        );
-
-
-
-                                    // =================================
-                                    // COPIAR AL MODELO
-                                    // =================================
+                                    // Copiar solamente posición.
+                                    //
+                                    // NO copiamos la rotación,
+                                    // así el robot permanece vertical.
 
                                     this.modelo.object3D
                                         .position
@@ -405,45 +703,44 @@
                                         );
 
 
-                                    this.modelo.object3D
-                                        .quaternion
-                                        .copy(
-                                            orientacion
-                                        );
-
-
-                                    // Mostrar modelo.
-
                                     this.modelo.setAttribute(
-                                        "visible",
+                                        'visible',
                                         true
                                     );
 
 
-                                    // BLOQUEAR POSICIÓN.
+                                    // Ocultar marcador.
 
-                                    this.colocado = true;
+                                    this.punto.setAttribute(
+                                        'visible',
+                                        false
+                                    );
 
 
+                                    // Bloquear.
 
-                                    // =================================
-                                    // MENSAJE
-                                    // =================================
+                                    this.colocado =
+                                        true;
+
+
 
                                     const texto =
                                         document.getElementById(
-                                            "instruccionAR"
+                                            'instruccionAR'
                                         );
 
 
-                                    texto.innerHTML =
-                                        "<span class='ok'>" +
-                                        "Robot colocado y fijado." +
-                                        "</span>" +
-                                        "<br>" +
-                                        "Ahora camina alrededor del " +
-                                        "modelo para observar todas " +
-                                        "sus caras.";
+                                    if (texto) {
+
+                                        texto.innerHTML =
+                                            "<span class='ok'>" +
+                                            "Robot colocado y fijado." +
+                                            "</span>" +
+                                            "<br>" +
+                                            "Ahora camina alrededor para " +
+                                            "observarlo desde todos los lados.";
+
+                                    }
 
                                 }
                             );
@@ -458,43 +755,51 @@
                     // =================================================
 
                     escena.addEventListener(
-                        "exit-vr",
+                        'exit-vr',
                         () => {
 
 
-                            this.colocado = false;
+                            this.colocado =
+                                false;
 
-
-                            // Restauramos posición para la vista
-                            // normal / IMU.
 
                             this.modelo.setAttribute(
-                                "position",
-                                "0 0 -3"
+                                'position',
+                                '0 0 -3'
                             );
 
 
                             this.modelo.setAttribute(
-                                "rotation",
-                                "0 0 0"
+                                'visible',
+                                true
                             );
 
 
-                            this.modelo.setAttribute(
-                                "visible",
+                            this.punto.setAttribute(
+                                'position',
+                                '0 -100 0'
+                            );
+
+
+                            this.punto.setAttribute(
+                                'visible',
                                 true
                             );
 
 
                             const texto =
                                 document.getElementById(
-                                    "instruccionAR"
+                                    'instruccionAR'
                                 );
 
 
-                            texto.innerHTML =
-                                "En AR podrás colocar el modelo " +
-                                "sobre una superficie real.";
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "En modo AR podrás colocar el modelo " +
+                                    "sobre una superficie real.";
+
+                            }
 
                         }
                     );
@@ -507,7 +812,7 @@
 
 
         // =====================================================
-        // COMPROBAR COMPATIBILIDAD WEBXR
+        // COMPATIBILIDAD WEBXR
         // =====================================================
 
         async function comprobarXR() {
@@ -515,45 +820,47 @@
 
             const webxr =
                 document.getElementById(
-                    "estadoWebXR"
+                    'estadoWebXR'
                 );
 
 
             const vr =
                 document.getElementById(
-                    "estadoVR"
+                    'estadoVR'
                 );
 
 
             const ar =
                 document.getElementById(
-                    "estadoAR"
+                    'estadoAR'
                 );
 
 
 
-            if (!navigator.xr) {
+            if (
+                !navigator.xr
+            ) {
 
 
                 webxr.innerHTML =
-                    "WebXR: no disponible";
+                    'WebXR: no disponible';
 
                 webxr.className =
-                    "error";
+                    'error';
 
 
                 vr.innerHTML =
-                    "VR: no disponible";
+                    'VR: no disponible';
 
                 vr.className =
-                    "error";
+                    'error';
 
 
                 ar.innerHTML =
-                    "AR: no disponible";
+                    'AR: no disponible';
 
                 ar.className =
-                    "error";
+                    'error';
 
 
                 return;
@@ -563,10 +870,10 @@
 
 
             webxr.innerHTML =
-                "WebXR: disponible";
+                'WebXR: disponible';
 
             webxr.className =
-                "ok";
+                'ok';
 
 
 
@@ -580,24 +887,24 @@
                 const soportaVR =
                     await navigator.xr
                         .isSessionSupported(
-                            "immersive-vr"
+                            'immersive-vr'
                         );
 
 
                 vr.innerHTML =
                     soportaVR
                     ?
-                    "VR: compatible"
+                    'VR: compatible'
                     :
-                    "VR: no compatible";
+                    'VR: no compatible';
 
 
                 vr.className =
                     soportaVR
                     ?
-                    "ok"
+                    'ok'
                     :
-                    "error";
+                    'error';
 
 
             }
@@ -606,10 +913,10 @@
 
 
                 vr.innerHTML =
-                    "VR: error";
+                    'VR: error';
 
                 vr.className =
-                    "error";
+                    'error';
 
             }
 
@@ -625,24 +932,24 @@
                 const soportaAR =
                     await navigator.xr
                         .isSessionSupported(
-                            "immersive-ar"
+                            'immersive-ar'
                         );
 
 
                 ar.innerHTML =
                     soportaAR
                     ?
-                    "AR: compatible"
+                    'AR: compatible'
                     :
-                    "AR: no compatible";
+                    'AR: no compatible';
 
 
                 ar.className =
                     soportaAR
                     ?
-                    "ok"
+                    'ok'
                     :
-                    "error";
+                    'error';
 
 
             }
@@ -651,10 +958,10 @@
 
 
                 ar.innerHTML =
-                    "AR: error";
+                    'AR: error';
 
                 ar.className =
-                    "error";
+                    'error';
 
             }
 
@@ -663,7 +970,7 @@
 
 
         window.addEventListener(
-            "load",
+            'load',
             comprobarXR
         );
 
@@ -679,7 +986,7 @@
 
 
 <!-- =========================================================
-     PANEL
+     PANEL DE INFORMACIÓN
 ========================================================= -->
 
 <div id="overlay">
@@ -719,6 +1026,7 @@
     </div>
 
 
+
     <div
         id="estadoModelo"
         class="esperando">
@@ -728,9 +1036,42 @@
     </div>
 
 
+
+    <!-- =====================================================
+         CONTROLES DE PC
+    ====================================================== -->
+
+    <div id="controlesPC">
+
+        <b>Controles PC</b>
+
+        <br>
+
+        W / S = adelante / atrás
+
+        <br>
+
+        A / D = izquierda / derecha
+
+        <br>
+
+        E = subir
+
+        <br>
+
+        Q = bajar / agacharse
+
+        <br>
+
+        Mouse = mirar
+
+    </div>
+
+
+
     <div id="instruccionAR">
 
-        En AR podrás colocar el modelo
+        En modo AR podrás colocar el modelo
         sobre una superficie real.
 
     </div>
@@ -784,7 +1125,7 @@
 
 
     <!-- =====================================================
-         ARCHIVO GLB
+         RECURSOS
     ====================================================== -->
 
     <a-assets timeout="30000">
@@ -848,40 +1189,35 @@
 
 
     <!-- =====================================================
-         PUNTO AUXILIAR PARA HIT TEST
-
-         ESTE ES EL OBJETO QUE A-FRAME MUEVE.
-
-         EL ROBOT YA NO ES EL TARGET DEL HIT TEST.
-
-         ES INVISIBLE.
+         MARCADOR DE SUPERFICIE AR
     ====================================================== -->
 
-    <a-cylinder
+    <a-ring
 
         id="puntoColocacionAR"
 
         position="0 -100 0"
 
-        radius="0.20"
+        rotation="-90 0 0"
 
-        height="0.01"
+        radius-inner="0.12"
+
+        radius-outer="0.18"
+
+        color="#00FF88"
 
         material="
-            color: #00FF88;
             transparent: true;
-            opacity: 0;
-            depthWrite: false;
+            opacity: 0.8;
+            side: double;
         ">
 
-    </a-cylinder>
+    </a-ring>
 
 
 
     <!-- =====================================================
-         CONTENEDOR DEL ROBOT
-
-         ESTE OBJETO QUEDA FIJO DESPUÉS DE COLOCARLO.
+         CONTENEDOR DEL MODELO
     ====================================================== -->
 
     <a-entity
@@ -900,12 +1236,7 @@
         <!-- =================================================
              MODELO CAD
 
-             IMPORTANTE:
-
-             rotation="0 90 0"
-
-             gira el modelo 90 grados para que en la vista
-             normal / IMU aparezca DE LADO.
+             ROTACIÓN 90° EN Y PARA VISTA LATERAL
         ================================================== -->
 
         <a-entity
@@ -935,12 +1266,13 @@
 
 
     <!-- =====================================================
-         PISO PARA VISTA NORMAL
+         PISO
+         SOLO PC / VR
     ====================================================== -->
 
     <a-plane
 
-        hide-on-enter-ar
+        ocultar-en-ar
 
         position="0 0 -3"
 
@@ -962,11 +1294,12 @@
 
     <!-- =====================================================
          CIELO
+         SOLO PC / VR
     ====================================================== -->
 
     <a-sky
 
-        hide-on-enter-ar
+        ocultar-en-ar
 
         color="#DCE6EA">
 
@@ -975,9 +1308,9 @@
 
 
     <!-- =====================================================
-         CÁMARA
-
-         EN EL TELÉFONO LA IMU CONTROLA SU ORIENTACIÓN.
+         RIG DEL USUARIO
+         
+         Q/E CAMBIAN LA ALTURA DE ESTE ELEMENTO.
     ====================================================== -->
 
     <a-entity
@@ -985,8 +1318,19 @@
         id="rig"
 
         position="0 1.6 0"
+
+        movimiento-vertical="
+            velocidad: 1.5;
+            alturaMinima: 0.3;
+            alturaMaxima: 4;
+        "
     >
 
+
+
+        <!-- =================================================
+             CÁMARA
+        ================================================== -->
 
         <a-camera
 
@@ -994,7 +1338,9 @@
 
             look-controls
 
-            wasd-controls>
+            wasd-controls="
+                acceleration: 25;
+            ">
 
         </a-camera>
 
@@ -1004,6 +1350,7 @@
 
 
 </a-scene>
+
 
 
 </body>
