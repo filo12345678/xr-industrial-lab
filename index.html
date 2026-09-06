@@ -17,7 +17,7 @@
 
 
     <!-- =====================================================
-         A-FRAME
+         A-FRAME 1.8.0
     ====================================================== -->
 
     <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
@@ -29,11 +29,17 @@
 
     <style>
 
+        html,
         body {
+
             margin: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
+
             font-family: Arial, sans-serif;
         }
+
 
         #overlay {
 
@@ -46,7 +52,7 @@
 
             padding: 14px;
 
-            background: rgba(0, 0, 0, 0.72);
+            background: rgba(0, 0, 0, 0.75);
 
             color: white;
 
@@ -61,28 +67,36 @@
             pointer-events: none;
         }
 
-        #titulo {
 
-            color: #00ff88;
+        #titulo {
 
             font-size: 17px;
 
             font-weight: bold;
 
+            color: #00ff88;
+
             margin-bottom: 8px;
         }
 
+
         .ok {
+
             color: #00ff88;
         }
 
+
         .error {
+
             color: #ff5555;
         }
 
+
         .esperando {
+
             color: #ffcc00;
         }
+
 
         #estadoModelo {
 
@@ -93,6 +107,7 @@
             border-top: 1px solid #777;
         }
 
+
         #instruccionAR {
 
             margin-top: 10px;
@@ -100,8 +115,6 @@
             padding-top: 10px;
 
             border-top: 1px solid #777;
-
-            color: white;
         }
 
     </style>
@@ -111,80 +124,25 @@
     <script>
 
         // =====================================================
-        // OCULTAR ELEMENTOS CUANDO SE ENTRA EN AR
-        //
-        // Se utiliza para esconder:
-        // - cielo
-        // - piso virtual
-        //
-        // En AR queremos ver el mundo real.
+        // COMPONENTE:
+        // DETECTA SI EL MODELO GLB CARGÓ CORRECTAMENTE
         // =====================================================
 
         AFRAME.registerComponent(
-            'ocultar-en-ar',
+            'control-modelo',
             {
 
                 init: function () {
 
-                    const elemento = this.el;
-                    const escena = elemento.sceneEl;
+                    const modelo = this.el;
 
 
-                    escena.addEventListener(
-                        'enter-vr',
-                        function () {
-
-                            if (escena.is('ar-mode')) {
-
-                                elemento.setAttribute(
-                                    'visible',
-                                    false
-                                );
-
-                            }
-
-                        }
-                    );
-
-
-                    escena.addEventListener(
-                        'exit-vr',
-                        function () {
-
-                            elemento.setAttribute(
-                                'visible',
-                                true
-                            );
-
-                        }
-                    );
-
-                }
-
-            }
-        );
-
-
-
-        // =====================================================
-        // ESTADO DEL MODELO GLB
-        // =====================================================
-
-        AFRAME.registerComponent(
-            'estado-modelo',
-            {
-
-                init: function () {
-
-                    const elemento = this.el;
-
-
-                    elemento.addEventListener(
+                    modelo.addEventListener(
                         'model-loaded',
                         function () {
 
                             console.log(
-                                "Modelo GLB cargado correctamente."
+                                'MODELO GLB CARGADO CORRECTAMENTE'
                             );
 
 
@@ -207,12 +165,12 @@
                     );
 
 
-                    elemento.addEventListener(
+                    modelo.addEventListener(
                         'model-error',
                         function (evento) {
 
                             console.error(
-                                "Error cargando GLB:",
+                                'ERROR CARGANDO MODELO GLB:',
                                 evento.detail
                             );
 
@@ -243,11 +201,12 @@
 
 
         // =====================================================
+        // COMPONENTE:
         // ESTADO DEL HIT TEST
         // =====================================================
 
         AFRAME.registerComponent(
-            'estado-hit-test',
+            'control-hit-test',
             {
 
                 init: function () {
@@ -256,7 +215,7 @@
 
 
                     // -------------------------------------------------
-                    // Se inició la búsqueda de superficies
+                    // COMIENZA A BUSCAR SUPERFICIES
                     // -------------------------------------------------
 
                     escena.addEventListener(
@@ -283,7 +242,7 @@
 
 
                     // -------------------------------------------------
-                    // Se encontró una superficie
+                    // SUPERFICIE DETECTADA
                     // -------------------------------------------------
 
                     escena.addEventListener(
@@ -304,7 +263,7 @@
                                     "</span>" +
                                     "<br>" +
                                     "Toca la pantalla para colocar " +
-                                    "el modelo CAD.";
+                                    "el modelo.";
 
                             }
 
@@ -313,7 +272,7 @@
 
 
                     // -------------------------------------------------
-                    // Se colocó el modelo
+                    // MODELO COLOCADO
                     // -------------------------------------------------
 
                     escena.addEventListener(
@@ -330,11 +289,11 @@
 
                                 texto.innerHTML =
                                     "<span class='ok'>" +
-                                    "Modelo colocado correctamente." +
+                                    "Modelo colocado." +
                                     "</span>" +
                                     "<br>" +
-                                    "Puedes buscar otra superficie " +
-                                    "y tocar nuevamente para moverlo.";
+                                    "Puedes tocar otra superficie " +
+                                    "para cambiar su posición.";
 
                             }
 
@@ -349,52 +308,54 @@
 
 
         // =====================================================
-        // DETECCIÓN DE COMPATIBILIDAD WEBXR
+        // COMPATIBILIDAD WEBXR
         // =====================================================
 
-        async function detectarCompatibilidadXR() {
+        async function comprobarXR() {
 
             const estadoWebXR =
                 document.getElementById(
-                    "estadoWebXR"
+                    'estadoWebXR'
                 );
+
 
             const estadoVR =
                 document.getElementById(
-                    "estadoVR"
+                    'estadoVR'
                 );
+
 
             const estadoAR =
                 document.getElementById(
-                    "estadoAR"
+                    'estadoAR'
                 );
 
 
             // -------------------------------------------------
-            // WEBXR
+            // ¿EXISTE WEBXR?
             // -------------------------------------------------
 
             if (!navigator.xr) {
 
                 estadoWebXR.innerHTML =
-                    "WebXR: no disponible";
+                    'WebXR: no disponible';
 
                 estadoWebXR.className =
-                    "error";
+                    'error';
 
 
                 estadoVR.innerHTML =
-                    "VR: no disponible";
+                    'VR: no disponible';
 
                 estadoVR.className =
-                    "error";
+                    'error';
 
 
                 estadoAR.innerHTML =
-                    "AR: no disponible";
+                    'AR: no disponible';
 
                 estadoAR.className =
-                    "error";
+                    'error';
 
 
                 return;
@@ -403,10 +364,11 @@
 
 
             estadoWebXR.innerHTML =
-                "WebXR: disponible";
+                'WebXR: disponible';
 
             estadoWebXR.className =
-                "ok";
+                'ok';
+
 
 
             // -------------------------------------------------
@@ -417,27 +379,27 @@
 
                 const soportaVR =
                     await navigator.xr.isSessionSupported(
-                        "immersive-vr"
+                        'immersive-vr'
                     );
 
 
                 if (soportaVR) {
 
                     estadoVR.innerHTML =
-                        "VR: compatible";
+                        'VR: compatible';
 
                     estadoVR.className =
-                        "ok";
+                        'ok';
 
                 }
 
                 else {
 
                     estadoVR.innerHTML =
-                        "VR: no compatible";
+                        'VR: no compatible';
 
                     estadoVR.className =
-                        "error";
+                        'error';
 
                 }
 
@@ -446,12 +408,13 @@
             catch (error) {
 
                 estadoVR.innerHTML =
-                    "VR: error";
+                    'VR: error';
 
                 estadoVR.className =
-                    "error";
+                    'error';
 
             }
+
 
 
             // -------------------------------------------------
@@ -462,27 +425,27 @@
 
                 const soportaAR =
                     await navigator.xr.isSessionSupported(
-                        "immersive-ar"
+                        'immersive-ar'
                     );
 
 
                 if (soportaAR) {
 
                     estadoAR.innerHTML =
-                        "AR: compatible";
+                        'AR: compatible';
 
                     estadoAR.className =
-                        "ok";
+                        'ok';
 
                 }
 
                 else {
 
                     estadoAR.innerHTML =
-                        "AR: no compatible";
+                        'AR: no compatible';
 
                     estadoAR.className =
-                        "error";
+                        'error';
 
                 }
 
@@ -491,10 +454,10 @@
             catch (error) {
 
                 estadoAR.innerHTML =
-                    "AR: error";
+                    'AR: error';
 
                 estadoAR.className =
-                    "error";
+                    'error';
 
             }
 
@@ -502,8 +465,8 @@
 
 
         window.addEventListener(
-            "load",
-            detectarCompatibilidadXR
+            'load',
+            comprobarXR
         );
 
     </script>
@@ -516,13 +479,16 @@
 
 
 <!-- =========================================================
-     PANEL DE INFORMACIÓN
+     PANEL DE ESTADO
 ========================================================= -->
 
 <div id="overlay">
 
+
     <div id="titulo">
+
         MODELO CAD INDUSTRIAL XR
+
     </div>
 
 
@@ -564,10 +530,11 @@
 
     <div id="instruccionAR">
 
-        En AR podrás colocar el modelo CAD
+        En modo AR podrás colocar el modelo
         sobre una superficie real.
 
     </div>
+
 
 </div>
 
@@ -579,29 +546,33 @@
 
 <a-scene
 
+
     xr-mode-ui="
         XRMode: xr
     "
 
+
     webxr="
+        optionalFeatures: hit-test;
         referenceSpaceType: local;
-        optionalFeatures: hit-test, dom-overlay;
-        overlayElement: #overlay;
     "
+
 
     ar-hit-test="
         target: #objetoXR;
         type: footprint;
     "
 
-    estado-hit-test
+
+    control-hit-test
+
 
     renderer="
         colorManagement: true;
-        physicallyCorrectLights: true;
-        alpha: true;
         antialias: true;
+        alpha: true;
     "
+
 
     background="
         color: #DCE6EA;
@@ -614,26 +585,27 @@
          RECURSOS
     ====================================================== -->
 
-    <a-assets>
+    <a-assets timeout="30000">
+
 
         <!--
-        IMPORTANTE:
+        ======================================================
+        MODELO CAD
 
-        El nombre debe coincidir EXACTAMENTE
-        con el archivo que subiste a GitHub.
+        LA RUTA DEBE SER EXACTAMENTE:
 
-        Ejemplo actual:
-
-        models/robot_industrial.glb
+        models/modelo_industrial.glb
+        ======================================================
         -->
 
         <a-asset-item
 
             id="modeloIndustrial"
 
-            src="models/robot_industrial.glb">
+            src="./models/modelo_industrial.glb">
 
         </a-asset-item>
+
 
     </a-assets>
 
@@ -643,51 +615,52 @@
          ILUMINACIÓN
     ====================================================== -->
 
-    <a-light
 
-        type="ambient"
+    <a-entity
 
-        color="#FFFFFF"
+        light="
+            type: ambient;
+            color: #FFFFFF;
+            intensity: 1;
+        ">
 
-        intensity="1.0">
-
-    </a-light>
-
-
-    <a-light
-
-        type="directional"
-
-        color="#FFFFFF"
-
-        intensity="1.0"
-
-        position="-2 4 3">
-
-    </a-light>
+    </a-entity>
 
 
-    <a-light
 
-        type="directional"
+    <a-entity
 
-        color="#FFFFFF"
+        light="
+            type: directional;
+            color: #FFFFFF;
+            intensity: 1;
+            castShadow: true;
+        "
 
-        intensity="0.5"
+        position="-3 5 3">
 
-        position="3 2 -3">
+    </a-entity>
 
-    </a-light>
+
+
+    <a-entity
+
+        light="
+            type: directional;
+            color: #FFFFFF;
+            intensity: 0.5;
+        "
+
+        position="4 3 -4">
+
+    </a-entity>
 
 
 
     <!-- =====================================================
-         CONTENEDOR DEL MODELO
+         CONTENEDOR DEL HIT TEST
 
-         IMPORTANTE:
-         El Hit Test mueve ESTE elemento.
-
-         El modelo GLB está dentro de él.
+         ESTE OBJETO ES MOVIDO POR WEBXR.
     ====================================================== -->
 
     <a-entity
@@ -704,13 +677,12 @@
 
         <!-- =================================================
              MODELO CAD
-             
-             Aquí ajustaremos:
-             - escala
-             - rotación
-             - altura
 
-             sin afectar el Hit Test.
+             AJUSTA SOLO ESTOS 3 PARÁMETROS SI ES NECESARIO:
+
+             position
+             rotation
+             scale
         ================================================== -->
 
         <a-entity
@@ -719,7 +691,7 @@
 
             gltf-model="#modeloIndustrial"
 
-            estado-modelo
+            control-modelo
 
             position="0 0 0"
 
@@ -727,7 +699,10 @@
 
             scale="0.01 0.01 0.01"
 
-            shadow="cast: true; receive: true">
+            shadow="
+                cast: true;
+                receive: true;
+            ">
 
         </a-entity>
 
@@ -737,14 +712,36 @@
 
 
     <!-- =====================================================
-         PISO PARA PC / VR
+         REFERENCIA DEL ORIGEN
+         PEQUEÑO CÍRCULO ROJO
 
-         Se oculta cuando entramos en AR.
+         NOS AYUDA A SABER DÓNDE ESTÁ Z = 0
+    ====================================================== -->
+
+    <a-cylinder
+
+        position="0 0.01 -3"
+
+        radius="0.08"
+
+        height="0.02"
+
+        color="#FF0000"
+
+        hide-on-enter-ar>
+
+    </a-cylinder>
+
+
+
+    <!-- =====================================================
+         PISO PARA PC
+         DESAPARECE EN AR
     ====================================================== -->
 
     <a-plane
 
-        ocultar-en-ar
+        hide-on-enter-ar
 
         position="0 0 -3"
 
@@ -756,25 +753,22 @@
 
         color="#78909C"
 
-        material="
-            roughness: 0.9;
-        "
-
-        shadow="receive: true">
+        shadow="
+            receive: true;
+        ">
 
     </a-plane>
 
 
 
     <!-- =====================================================
-         CIELO PARA PC / VR
-
-         Se oculta en AR.
+         CIELO
+         DESAPARECE EN AR
     ====================================================== -->
 
     <a-sky
 
-        ocultar-en-ar
+        hide-on-enter-ar
 
         color="#DCE6EA">
 
@@ -793,13 +787,17 @@
         position="0 1.6 0"
     >
 
+
         <a-camera
+
+            position="0 0 0"
 
             look-controls
 
             wasd-controls>
 
         </a-camera>
+
 
     </a-entity>
 
