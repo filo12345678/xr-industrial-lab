@@ -35,7 +35,6 @@
             margin: 0;
 
             width: 100%;
-
             height: 100%;
 
             overflow: hidden;
@@ -44,12 +43,15 @@
         }
 
 
+        /* ==================================================
+           PANEL PRINCIPAL
+        ================================================== */
+
         #overlay {
 
             position: fixed;
 
             top: 15px;
-
             left: 15px;
 
             width: 310px;
@@ -69,6 +71,8 @@
             line-height: 1.5;
 
             pointer-events: none;
+
+            transition: opacity 0.3s ease;
         }
 
 
@@ -85,16 +89,19 @@
 
 
         .ok {
+
             color: #00ff88;
         }
 
 
         .error {
+
             color: #ff5555;
         }
 
 
         .esperando {
+
             color: #ffcc00;
         }
 
@@ -126,6 +133,41 @@
             padding-top: 10px;
 
             border-top: 1px solid #777;
+        }
+
+
+        /* ==================================================
+           PANEL COMPACTO DURANTE AR
+        ================================================== */
+
+        #overlay.modoAR {
+
+            width: 260px;
+
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+
+        #overlay.modoAR #titulo,
+        #overlay.modoAR #estadoWebXR,
+        #overlay.modoAR #estadoVR,
+        #overlay.modoAR #estadoAR,
+        #overlay.modoAR #estadoModelo,
+        #overlay.modoAR #controlesPC {
+
+            display: none;
+        }
+
+
+        #overlay.modoAR #instruccionAR {
+
+            margin: 0;
+
+            padding: 0;
+
+            border: none;
+
+            font-size: 14px;
         }
 
     </style>
@@ -212,14 +254,13 @@
 
 
         // =====================================================
-        // OCULTAR OBJETOS EN MODO AR
+        // OCULTAR ELEMENTOS VIRTUALES EN AR
         //
-        // Se usa para ocultar:
-        //
+        // Oculta:
         // - piso virtual
         // - cielo virtual
         //
-        // y permitir ver el mundo real.
+        // para dejar visible el entorno real.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -275,7 +316,7 @@
 
 
         // =====================================================
-        // MOVIMIENTO COMPLETO EN PC
+        // MOVIMIENTO EN PC
         //
         // W = adelante
         // S = atrás
@@ -297,7 +338,6 @@
                     velocidad: {
 
                         type: 'number',
-
                         default: 2.0
                     },
 
@@ -305,7 +345,6 @@
                     velocidadVertical: {
 
                         type: 'number',
-
                         default: 1.5
                     },
 
@@ -313,7 +352,6 @@
                     alturaMinima: {
 
                         type: 'number',
-
                         default: 0.25
                     },
 
@@ -321,7 +359,6 @@
                     alturaMaxima: {
 
                         type: 'number',
-
                         default: 5
                     }
 
@@ -331,14 +368,8 @@
                 init: function () {
 
 
-                    // =========================================
-                    // REGISTRO DE TECLAS
-                    // =========================================
-
                     this.teclas = {};
 
-
-                    // Cámara principal.
 
                     this.camara =
                         document.getElementById(
@@ -364,15 +395,10 @@
                             if (
 
                                 evento.code === 'KeyW' ||
-
                                 evento.code === 'KeyA' ||
-
                                 evento.code === 'KeyS' ||
-
                                 evento.code === 'KeyD' ||
-
                                 evento.code === 'KeyQ' ||
-
                                 evento.code === 'KeyE'
 
                             ) {
@@ -435,15 +461,13 @@
 
 
                     // =========================================
-                    // EN VR / AR NO USAR TECLADO
-                    //
-                    // La posición viene del dispositivo XR.
+                    // EN AR / VR:
+                    // NO CONTROLAR POR TECLADO
                     // =========================================
 
                     if (
 
                         escena.is('vr-mode') ||
-
                         escena.is('ar-mode')
 
                     ) {
@@ -466,14 +490,13 @@
                         deltaTime / 1000;
 
 
-
                     const rig =
                         this.el.object3D;
 
 
 
                     // =========================================
-                    // OBTENER DIRECCIÓN DE LA CÁMARA
+                    // ORIENTACIÓN ACTUAL DE LA CÁMARA
                     // =========================================
 
                     const quaternion =
@@ -504,12 +527,7 @@
                     );
 
 
-                    /*
-                    Eliminamos componente vertical.
-
-                    Así mirar hacia arriba y presionar W
-                    NO hace que la cámara vuele.
-                    */
+                    // Mantener movimiento horizontal.
 
                     adelante.y = 0;
 
@@ -555,7 +573,7 @@
 
 
                     // =========================================
-                    // W = ADELANTE
+                    // W - ADELANTE
                     // =========================================
 
                     if (
@@ -576,7 +594,7 @@
 
 
                     // =========================================
-                    // S = ATRÁS
+                    // S - ATRÁS
                     // =========================================
 
                     if (
@@ -597,7 +615,7 @@
 
 
                     // =========================================
-                    // D = DERECHA
+                    // D - DERECHA
                     // =========================================
 
                     if (
@@ -618,7 +636,7 @@
 
 
                     // =========================================
-                    // A = IZQUIERDA
+                    // A - IZQUIERDA
                     // =========================================
 
                     if (
@@ -639,7 +657,7 @@
 
 
                     // =========================================
-                    // E = SUBIR
+                    // E - SUBIR
                     // =========================================
 
                     if (
@@ -657,7 +675,7 @@
 
 
                     // =========================================
-                    // Q = BAJAR / AGACHARSE
+                    // Q - BAJAR
                     // =========================================
 
                     if (
@@ -717,19 +735,7 @@
 
 
         // =====================================================
-        // COLOCACIÓN FIJA DEL MODELO EN AR
-        //
-        // WebXR mueve solamente un marcador.
-        //
-        // Cuando tocamos:
-        //
-        // marcador
-        //    ↓
-        // posición
-        //    ↓
-        // robot
-        //
-        // Después el robot NO vuelve a moverse.
+        // COLOCACIÓN FIJA DEL CAD EN AR
         // =====================================================
 
         AFRAME.registerComponent(
@@ -743,7 +749,6 @@
                         this.el;
 
 
-
                     this.modelo =
                         document.getElementById(
                             'objetoXR'
@@ -753,6 +758,12 @@
                     this.punto =
                         document.getElementById(
                             'puntoColocacionAR'
+                        );
+
+
+                    this.panel =
+                        document.getElementById(
+                            'overlay'
                         );
 
 
@@ -779,21 +790,45 @@
                             }
 
 
-
                             this.colocado =
                                 false;
 
 
 
-                            // Ocultar modelo.
+                            // =========================================
+                            // HACER PANEL COMPACTO
+                            // =========================================
+
+                            if (
+                                this.panel
+                            ) {
+
+                                this.panel.style.display =
+                                    'block';
+
+
+                                this.panel.style.opacity =
+                                    '1';
+
+
+                                this.panel.classList.add(
+                                    'modoAR'
+                                );
+
+                            }
+
+
+
+                            // =========================================
+                            // OCULTAR ROBOT
+                            // HASTA ENCONTRAR SUPERFICIE
+                            // =========================================
 
                             this.modelo.setAttribute(
                                 'visible',
                                 false
                             );
 
-
-                            // Mostrar marcador.
 
                             this.punto.setAttribute(
                                 'visible',
@@ -811,9 +846,9 @@
                             if (texto) {
 
                                 texto.innerHTML =
-                                    "Mueve lentamente el teléfono." +
+                                    "Buscando una superficie..." +
                                     "<br>" +
-                                    "Apunta a una mesa o al piso.";
+                                    "Mueve lentamente el teléfono.";
 
                             }
 
@@ -849,9 +884,9 @@
                             if (texto) {
 
                                 texto.innerHTML =
-                                    "Buscando superficie..." +
+                                    "Buscando una superficie..." +
                                     "<br>" +
-                                    "Mueve lentamente el dispositivo.";
+                                    "Apunta hacia una mesa o el piso.";
 
                             }
 
@@ -861,7 +896,7 @@
 
 
                     // =================================================
-                    // SUPERFICIE ENCONTRADA
+                    // SUPERFICIE DETECTADA
                     // =================================================
 
                     escena.addEventListener(
@@ -891,8 +926,8 @@
                                     "Superficie detectada." +
                                     "</span>" +
                                     "<br>" +
-                                    "Toca la pantalla una vez " +
-                                    "para colocar el robot.";
+                                    "Toca la pantalla para colocar " +
+                                    "el modelo CAD.";
 
                             }
 
@@ -902,7 +937,7 @@
 
 
                     // =================================================
-                    // TOCAR PARA FIJAR
+                    // TOCAR PARA COLOCAR
                     // =================================================
 
                     escena.addEventListener(
@@ -934,7 +969,7 @@
 
 
                                     // =================================
-                                    // OBTENER POSICIÓN DEL HIT TEST
+                                    // OBTENER POSICIÓN
                                     // =================================
 
                                     const posicion =
@@ -949,7 +984,7 @@
 
 
                                     // =================================
-                                    // COLOCAR ROBOT
+                                    // COLOCAR EL CAD
                                     // =================================
 
                                     this.modelo.object3D
@@ -961,12 +996,12 @@
 
 
                                     /*
-                                    NO copiamos la orientación
-                                    del Hit Test.
+                                    No copiamos la rotación del
+                                    Hit Test.
 
-                                    Así el robot permanece vertical.
+                                    El robot conserva su
+                                    orientación vertical.
                                     */
-
 
 
                                     this.modelo.setAttribute(
@@ -976,7 +1011,9 @@
 
 
 
-                                    // Ocultar marcador.
+                                    // =================================
+                                    // OCULTAR RETÍCULO
+                                    // =================================
 
                                     this.punto.setAttribute(
                                         'visible',
@@ -985,12 +1022,18 @@
 
 
 
-                                    // Bloquear ubicación.
+                                    // =================================
+                                    // BLOQUEAR POSICIÓN
+                                    // =========================================
 
                                     this.colocado =
                                         true;
 
 
+
+                                    // =================================
+                                    // MENSAJE FINAL
+                                    // =================================
 
                                     const texto =
                                         document.getElementById(
@@ -1002,13 +1045,59 @@
 
                                         texto.innerHTML =
                                             "<span class='ok'>" +
-                                            "Robot colocado y fijado." +
-                                            "</span>" +
-                                            "<br>" +
-                                            "Ahora camina alrededor " +
-                                            "para observar todas sus caras.";
+                                            "Modelo colocado y fijado." +
+                                            "</span>";
 
                                     }
+
+
+
+                                    // =================================
+                                    // OCULTAR PANEL
+                                    // DESPUÉS DE 0.8 SEGUNDOS
+                                    // =================================
+
+                                    setTimeout(
+                                        () => {
+
+
+                                            if (
+                                                this.panel &&
+                                                this.colocado &&
+                                                escena.is('ar-mode')
+                                            ) {
+
+
+                                                this.panel.style.opacity =
+                                                    '0';
+
+
+                                                setTimeout(
+                                                    () => {
+
+
+                                                        if (
+                                                            this.panel &&
+                                                            this.colocado &&
+                                                            escena.is('ar-mode')
+                                                        ) {
+
+                                                            this.panel.style.display =
+                                                                'none';
+
+                                                        }
+
+                                                    },
+
+                                                    300
+                                                );
+
+                                            }
+
+                                        },
+
+                                        800
+                                    );
 
                                 }
                             );
@@ -1019,7 +1108,7 @@
 
 
                     // =================================================
-                    // SALIR DE AR
+                    // SALIR DE AR / VR
                     // =================================================
 
                     escena.addEventListener(
@@ -1032,7 +1121,33 @@
 
 
 
-                            // Restaurar posición PC.
+                            // =========================================
+                            // VOLVER A MOSTRAR EL PANEL
+                            // =========================================
+
+                            if (
+                                this.panel
+                            ) {
+
+                                this.panel.style.display =
+                                    'block';
+
+
+                                this.panel.style.opacity =
+                                    '1';
+
+
+                                this.panel.classList.remove(
+                                    'modoAR'
+                                );
+
+                            }
+
+
+
+                            // =========================================
+                            // RESTAURAR POSICIÓN DEL CAD
+                            // =========================================
 
                             this.modelo.setAttribute(
                                 'position',
@@ -1047,7 +1162,9 @@
 
 
 
-                            // Restaurar marcador.
+                            // =========================================
+                            // RESTAURAR RETÍCULO
+                            // =========================================
 
                             this.punto.setAttribute(
                                 'position',
@@ -1071,8 +1188,8 @@
                             if (texto) {
 
                                 texto.innerHTML =
-                                    "En AR podrás colocar el " +
-                                    "modelo sobre una superficie real.";
+                                    "En modo AR podrás colocar " +
+                                    "el modelo sobre una superficie real.";
 
                             }
 
@@ -1087,7 +1204,7 @@
 
 
         // =====================================================
-        // COMPROBAR WEBXR
+        // COMPROBACIÓN DE WEBXR
         // =====================================================
 
         async function comprobarXR() {
@@ -1273,7 +1390,7 @@
 
 
 <!-- =========================================================
-     PANEL DE INFORMACIÓN
+     PANEL
 ========================================================= -->
 
 <div id="overlay">
@@ -1372,7 +1489,7 @@
 
 
 <!-- =========================================================
-     ESCENA PRINCIPAL
+     ESCENA
 ========================================================= -->
 
 <a-scene
@@ -1415,21 +1532,11 @@
 
 
     <!-- =====================================================
-         ARCHIVOS
+         RECURSOS
     ====================================================== -->
 
     <a-assets timeout="30000">
 
-
-        <!--
-        MODELO CAD
-
-        Ruta:
-
-        xr-industrial-lab/
-        └── models/
-            └── modelo_industrial.glb
-        -->
 
         <a-asset-item
 
@@ -1489,10 +1596,7 @@
 
 
     <!-- =====================================================
-         MARCADOR HIT TEST
-
-         Este círculo será movido por WebXR
-         mientras buscamos una superficie.
+         RETÍCULO DE DETECCIÓN AR
     ====================================================== -->
 
     <a-ring
@@ -1520,7 +1624,7 @@
 
 
     <!-- =====================================================
-         CONTENEDOR DEL MODELO
+         CONTENEDOR DEL CAD
     ====================================================== -->
 
     <a-entity
@@ -1539,13 +1643,8 @@
         <!-- =================================================
              MODELO CAD
 
-             Vista inicial lateral:
-
-             rotation="0 90 0"
-
-             Si quieres ver el otro lateral:
-             
-             rotation="0 -90 0"
+             90° EN Y:
+             VISTA INICIAL LATERAL
         ================================================== -->
 
         <a-entity
@@ -1576,6 +1675,8 @@
 
     <!-- =====================================================
          PISO PC / VR
+
+         SE OCULTA EN AR
     ====================================================== -->
 
     <a-plane
@@ -1602,6 +1703,8 @@
 
     <!-- =====================================================
          CIELO PC / VR
+
+         SE OCULTA EN AR
     ====================================================== -->
 
     <a-sky
@@ -1616,14 +1719,9 @@
 
     <!-- =====================================================
          RIG DEL USUARIO
-         
-         Este objeto contiene la cámara.
 
-         En PC:
-         nosotros movemos este elemento.
-
-         En XR:
-         WebXR controla la pose del visor.
+         POSICIÓN INICIAL:
+         1.6 m DE ALTURA
     ====================================================== -->
 
     <a-entity
@@ -1644,12 +1742,6 @@
 
         <!-- =================================================
              CÁMARA
-             
-             IMPORTANTE:
-             YA NO UTILIZAMOS wasd-controls.
-             
-             Nuestro componente movimiento-pc
-             maneja todas las teclas.
         ================================================== -->
 
         <a-camera
