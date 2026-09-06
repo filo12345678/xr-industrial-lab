@@ -15,9 +15,8 @@
 
     <title>Laboratorio XR - Modelo CAD Industrial</title>
 
-
     <!-- =====================================================
-         A-FRAME 1.8.0
+         A-FRAME
     ====================================================== -->
 
     <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
@@ -31,12 +30,10 @@
 
         html,
         body {
-
             margin: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-
             font-family: Arial, sans-serif;
         }
 
@@ -70,30 +67,27 @@
 
         #titulo {
 
+            color: #00ff88;
+
             font-size: 17px;
 
             font-weight: bold;
-
-            color: #00ff88;
 
             margin-bottom: 8px;
         }
 
 
         .ok {
-
             color: #00ff88;
         }
 
 
         .error {
-
             color: #ff5555;
         }
 
 
         .esperando {
-
             color: #ffcc00;
         }
 
@@ -123,9 +117,9 @@
 
     <script>
 
+
         // =====================================================
-        // COMPONENTE:
-        // DETECTA SI EL MODELO GLB CARGÓ CORRECTAMENTE
+        // CONTROL DE CARGA DEL MODELO GLB
         // =====================================================
 
         AFRAME.registerComponent(
@@ -142,24 +136,20 @@
                         function () {
 
                             console.log(
-                                'MODELO GLB CARGADO CORRECTAMENTE'
+                                "Modelo GLB cargado correctamente"
                             );
 
 
                             const estado =
                                 document.getElementById(
-                                    'estadoModelo'
+                                    "estadoModelo"
                                 );
 
 
-                            if (estado) {
-
-                                estado.innerHTML =
-                                    "<span class='ok'>" +
-                                    "Modelo CAD: cargado correctamente" +
-                                    "</span>";
-
-                            }
+                            estado.innerHTML =
+                                "<span class='ok'>" +
+                                "Modelo CAD: cargado correctamente" +
+                                "</span>";
 
                         }
                     );
@@ -170,25 +160,21 @@
                         function (evento) {
 
                             console.error(
-                                'ERROR CARGANDO MODELO GLB:',
+                                "Error cargando GLB:",
                                 evento.detail
                             );
 
 
                             const estado =
                                 document.getElementById(
-                                    'estadoModelo'
+                                    "estadoModelo"
                                 );
 
 
-                            if (estado) {
-
-                                estado.innerHTML =
-                                    "<span class='error'>" +
-                                    "Modelo CAD: error al cargar" +
-                                    "</span>";
-
-                            }
+                            estado.innerHTML =
+                                "<span class='error'>" +
+                                "Modelo CAD: error al cargar" +
+                                "</span>";
 
                         }
                     );
@@ -201,101 +187,314 @@
 
 
         // =====================================================
-        // COMPONENTE:
-        // ESTADO DEL HIT TEST
+        // COLOCACIÓN FIJA DEL MODELO EN REALIDAD AUMENTADA
+        //
+        // IMPORTANTE:
+        //
+        // El Hit Test NO mueve directamente el robot.
+        //
+        // Mueve un punto auxiliar invisible.
+        //
+        // Cuando el usuario toca la pantalla:
+        //
+        // 1. Se obtiene la posición del punto.
+        // 2. Se copia al robot.
+        // 3. El robot queda BLOQUEADO.
+        //
+        // Por lo tanto puede caminar alrededor de él.
         // =====================================================
 
         AFRAME.registerComponent(
-            'control-hit-test',
+            'colocacion-fija-ar',
             {
 
                 init: function () {
 
                     const escena = this.el;
 
+                    this.modelo =
+                        document.getElementById(
+                            "objetoXR"
+                        );
 
-                    // -------------------------------------------------
-                    // COMIENZA A BUSCAR SUPERFICIES
-                    // -------------------------------------------------
+                    this.punto =
+                        document.getElementById(
+                            "puntoColocacionAR"
+                        );
+
+
+                    // Indica si ya colocamos el modelo.
+                    this.colocado = false;
+
+
+
+                    // =================================================
+                    // ENTRAR A AR
+                    // =================================================
 
                     escena.addEventListener(
-                        'ar-hit-test-start',
-                        function () {
+                        "enter-vr",
+                        () => {
+
+                            if (!escena.is("ar-mode")) {
+                                return;
+                            }
+
+
+                            this.colocado = false;
+
+
+                            // Ocultamos el modelo hasta que el
+                            // usuario seleccione una superficie.
+
+                            this.modelo.setAttribute(
+                                "visible",
+                                false
+                            );
+
 
                             const texto =
                                 document.getElementById(
-                                    'instruccionAR'
+                                    "instruccionAR"
                                 );
 
 
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "Buscando superficies..." +
-                                    "<br>" +
-                                    "Mueve lentamente el dispositivo.";
-
-                            }
+                            texto.innerHTML =
+                                "Mueve lentamente el teléfono.<br>" +
+                                "Busca una mesa o el piso.";
 
                         }
                     );
 
 
-                    // -------------------------------------------------
-                    // SUPERFICIE DETECTADA
-                    // -------------------------------------------------
+
+                    // =================================================
+                    // HIT TEST INICIADO
+                    // =================================================
 
                     escena.addEventListener(
-                        'ar-hit-test-achieved',
-                        function () {
+                        "ar-hit-test-start",
+                        () => {
+
+                            if (!escena.is("ar-mode")) {
+                                return;
+                            }
+
+
+                            if (this.colocado) {
+                                return;
+                            }
+
 
                             const texto =
                                 document.getElementById(
-                                    'instruccionAR'
+                                    "instruccionAR"
                                 );
 
 
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "<span class='ok'>" +
-                                    "Superficie detectada." +
-                                    "</span>" +
-                                    "<br>" +
-                                    "Toca la pantalla para colocar " +
-                                    "el modelo.";
-
-                            }
+                            texto.innerHTML =
+                                "Buscando una superficie..." +
+                                "<br>" +
+                                "Mueve lentamente el dispositivo.";
 
                         }
                     );
 
 
-                    // -------------------------------------------------
-                    // MODELO COLOCADO
-                    // -------------------------------------------------
+
+                    // =================================================
+                    // SUPERFICIE ENCONTRADA
+                    // =================================================
 
                     escena.addEventListener(
-                        'ar-hit-test-select',
-                        function () {
+                        "ar-hit-test-achieved",
+                        () => {
+
+                            if (!escena.is("ar-mode")) {
+                                return;
+                            }
+
+
+                            if (this.colocado) {
+                                return;
+                            }
+
 
                             const texto =
                                 document.getElementById(
-                                    'instruccionAR'
+                                    "instruccionAR"
                                 );
 
 
-                            if (texto) {
+                            texto.innerHTML =
+                                "<span class='ok'>" +
+                                "Superficie detectada." +
+                                "</span>" +
+                                "<br>" +
+                                "Toca una vez para colocar el robot.";
 
-                                texto.innerHTML =
-                                    "<span class='ok'>" +
-                                    "Modelo colocado." +
-                                    "</span>" +
-                                    "<br>" +
-                                    "Puedes tocar otra superficie " +
-                                    "para cambiar su posición.";
+                        }
+                    );
 
+
+
+                    // =================================================
+                    // USUARIO TOCA LA SUPERFICIE
+                    // =================================================
+
+                    escena.addEventListener(
+                        "ar-hit-test-select",
+                        () => {
+
+
+                            // Si no estamos en AR, ignorar.
+
+                            if (!escena.is("ar-mode")) {
+                                return;
                             }
+
+
+                            // Si ya fue colocado, NO moverlo nuevamente.
+
+                            if (this.colocado) {
+                                return;
+                            }
+
+
+                            // Esperamos un frame para asegurarnos
+                            // de que A-Frame haya actualizado primero
+                            // el punto del Hit Test.
+
+                            requestAnimationFrame(
+                                () => {
+
+
+                                    // =================================
+                                    // POSICIÓN Y ORIENTACIÓN DEL HIT TEST
+                                    // =================================
+
+                                    const posicion =
+                                        new THREE.Vector3();
+
+
+                                    const orientacion =
+                                        new THREE.Quaternion();
+
+
+                                    this.punto.object3D
+                                        .getWorldPosition(
+                                            posicion
+                                        );
+
+
+                                    this.punto.object3D
+                                        .getWorldQuaternion(
+                                            orientacion
+                                        );
+
+
+
+                                    // =================================
+                                    // COPIAR AL MODELO
+                                    // =================================
+
+                                    this.modelo.object3D
+                                        .position
+                                        .copy(
+                                            posicion
+                                        );
+
+
+                                    this.modelo.object3D
+                                        .quaternion
+                                        .copy(
+                                            orientacion
+                                        );
+
+
+                                    // Mostrar modelo.
+
+                                    this.modelo.setAttribute(
+                                        "visible",
+                                        true
+                                    );
+
+
+                                    // BLOQUEAR POSICIÓN.
+
+                                    this.colocado = true;
+
+
+
+                                    // =================================
+                                    // MENSAJE
+                                    // =================================
+
+                                    const texto =
+                                        document.getElementById(
+                                            "instruccionAR"
+                                        );
+
+
+                                    texto.innerHTML =
+                                        "<span class='ok'>" +
+                                        "Robot colocado y fijado." +
+                                        "</span>" +
+                                        "<br>" +
+                                        "Ahora camina alrededor del " +
+                                        "modelo para observar todas " +
+                                        "sus caras.";
+
+                                }
+                            );
+
+                        }
+                    );
+
+
+
+                    // =================================================
+                    // SALIR DE AR
+                    // =================================================
+
+                    escena.addEventListener(
+                        "exit-vr",
+                        () => {
+
+
+                            this.colocado = false;
+
+
+                            // Restauramos posición para la vista
+                            // normal / IMU.
+
+                            this.modelo.setAttribute(
+                                "position",
+                                "0 0 -3"
+                            );
+
+
+                            this.modelo.setAttribute(
+                                "rotation",
+                                "0 0 0"
+                            );
+
+
+                            this.modelo.setAttribute(
+                                "visible",
+                                true
+                            );
+
+
+                            const texto =
+                                document.getElementById(
+                                    "instruccionAR"
+                                );
+
+
+                            texto.innerHTML =
+                                "En AR podrás colocar el modelo " +
+                                "sobre una superficie real.";
 
                         }
                     );
@@ -308,54 +507,53 @@
 
 
         // =====================================================
-        // COMPATIBILIDAD WEBXR
+        // COMPROBAR COMPATIBILIDAD WEBXR
         // =====================================================
 
         async function comprobarXR() {
 
-            const estadoWebXR =
+
+            const webxr =
                 document.getElementById(
-                    'estadoWebXR'
+                    "estadoWebXR"
                 );
 
 
-            const estadoVR =
+            const vr =
                 document.getElementById(
-                    'estadoVR'
+                    "estadoVR"
                 );
 
 
-            const estadoAR =
+            const ar =
                 document.getElementById(
-                    'estadoAR'
+                    "estadoAR"
                 );
 
 
-            // -------------------------------------------------
-            // ¿EXISTE WEBXR?
-            // -------------------------------------------------
 
             if (!navigator.xr) {
 
-                estadoWebXR.innerHTML =
-                    'WebXR: no disponible';
 
-                estadoWebXR.className =
-                    'error';
+                webxr.innerHTML =
+                    "WebXR: no disponible";
 
-
-                estadoVR.innerHTML =
-                    'VR: no disponible';
-
-                estadoVR.className =
-                    'error';
+                webxr.className =
+                    "error";
 
 
-                estadoAR.innerHTML =
-                    'AR: no disponible';
+                vr.innerHTML =
+                    "VR: no disponible";
 
-                estadoAR.className =
-                    'error';
+                vr.className =
+                    "error";
+
+
+                ar.innerHTML =
+                    "AR: no disponible";
+
+                ar.className =
+                    "error";
 
 
                 return;
@@ -363,111 +561,112 @@
             }
 
 
-            estadoWebXR.innerHTML =
-                'WebXR: disponible';
 
-            estadoWebXR.className =
-                'ok';
+            webxr.innerHTML =
+                "WebXR: disponible";
+
+            webxr.className =
+                "ok";
 
 
 
-            // -------------------------------------------------
+            // =================================================
             // VR
-            // -------------------------------------------------
+            // =================================================
 
             try {
+
 
                 const soportaVR =
-                    await navigator.xr.isSessionSupported(
-                        'immersive-vr'
-                    );
+                    await navigator.xr
+                        .isSessionSupported(
+                            "immersive-vr"
+                        );
 
 
-                if (soportaVR) {
+                vr.innerHTML =
+                    soportaVR
+                    ?
+                    "VR: compatible"
+                    :
+                    "VR: no compatible";
 
-                    estadoVR.innerHTML =
-                        'VR: compatible';
 
-                    estadoVR.className =
-                        'ok';
+                vr.className =
+                    soportaVR
+                    ?
+                    "ok"
+                    :
+                    "error";
 
-                }
-
-                else {
-
-                    estadoVR.innerHTML =
-                        'VR: no compatible';
-
-                    estadoVR.className =
-                        'error';
-
-                }
 
             }
 
             catch (error) {
 
-                estadoVR.innerHTML =
-                    'VR: error';
 
-                estadoVR.className =
-                    'error';
+                vr.innerHTML =
+                    "VR: error";
+
+                vr.className =
+                    "error";
 
             }
 
 
 
-            // -------------------------------------------------
+            // =================================================
             // AR
-            // -------------------------------------------------
+            // =================================================
 
             try {
 
+
                 const soportaAR =
-                    await navigator.xr.isSessionSupported(
-                        'immersive-ar'
-                    );
+                    await navigator.xr
+                        .isSessionSupported(
+                            "immersive-ar"
+                        );
 
 
-                if (soportaAR) {
+                ar.innerHTML =
+                    soportaAR
+                    ?
+                    "AR: compatible"
+                    :
+                    "AR: no compatible";
 
-                    estadoAR.innerHTML =
-                        'AR: compatible';
 
-                    estadoAR.className =
-                        'ok';
+                ar.className =
+                    soportaAR
+                    ?
+                    "ok"
+                    :
+                    "error";
 
-                }
-
-                else {
-
-                    estadoAR.innerHTML =
-                        'AR: no compatible';
-
-                    estadoAR.className =
-                        'error';
-
-                }
 
             }
 
             catch (error) {
 
-                estadoAR.innerHTML =
-                    'AR: error';
 
-                estadoAR.className =
-                    'error';
+                ar.innerHTML =
+                    "AR: error";
+
+                ar.className =
+                    "error";
 
             }
 
         }
 
 
+
         window.addEventListener(
-            'load',
+            "load",
             comprobarXR
         );
+
 
     </script>
 
@@ -478,8 +677,9 @@
 <body>
 
 
+
 <!-- =========================================================
-     PANEL DE ESTADO
+     PANEL
 ========================================================= -->
 
 <div id="overlay">
@@ -530,7 +730,7 @@
 
     <div id="instruccionAR">
 
-        En modo AR podrás colocar el modelo
+        En AR podrás colocar el modelo
         sobre una superficie real.
 
     </div>
@@ -541,7 +741,7 @@
 
 
 <!-- =========================================================
-     ESCENA A-FRAME
+     ESCENA
 ========================================================= -->
 
 <a-scene
@@ -553,18 +753,19 @@
 
 
     webxr="
-        optionalFeatures: hit-test;
+        optionalFeatures: hit-test, dom-overlay;
         referenceSpaceType: local;
+        overlayElement: #overlay;
     "
 
 
     ar-hit-test="
-        target: #objetoXR;
+        target: #puntoColocacionAR;
         type: footprint;
     "
 
 
-    control-hit-test
+    colocacion-fija-ar
 
 
     renderer="
@@ -581,22 +782,13 @@
 >
 
 
+
     <!-- =====================================================
-         RECURSOS
+         ARCHIVO GLB
     ====================================================== -->
 
     <a-assets timeout="30000">
 
-
-        <!--
-        ======================================================
-        MODELO CAD
-
-        LA RUTA DEBE SER EXACTAMENTE:
-
-        models/modelo_industrial.glb
-        ======================================================
-        -->
 
         <a-asset-item
 
@@ -615,52 +807,81 @@
          ILUMINACIÓN
     ====================================================== -->
 
+    <a-light
 
-    <a-entity
+        type="ambient"
 
-        light="
-            type: ambient;
-            color: #FFFFFF;
-            intensity: 1;
-        ">
+        color="#FFFFFF"
 
-    </a-entity>
+        intensity="1">
 
+    </a-light>
 
 
-    <a-entity
 
-        light="
-            type: directional;
-            color: #FFFFFF;
-            intensity: 1;
-            castShadow: true;
-        "
+    <a-light
+
+        type="directional"
+
+        color="#FFFFFF"
+
+        intensity="1"
 
         position="-3 5 3">
 
-    </a-entity>
+    </a-light>
 
 
 
-    <a-entity
+    <a-light
 
-        light="
-            type: directional;
-            color: #FFFFFF;
-            intensity: 0.5;
-        "
+        type="directional"
+
+        color="#FFFFFF"
+
+        intensity="0.5"
 
         position="4 3 -4">
 
-    </a-entity>
+    </a-light>
 
 
 
     <!-- =====================================================
-         CONTENEDOR DEL HIT TEST
+         PUNTO AUXILIAR PARA HIT TEST
 
-         ESTE OBJETO ES MOVIDO POR WEBXR.
+         ESTE ES EL OBJETO QUE A-FRAME MUEVE.
+
+         EL ROBOT YA NO ES EL TARGET DEL HIT TEST.
+
+         ES INVISIBLE.
+    ====================================================== -->
+
+    <a-cylinder
+
+        id="puntoColocacionAR"
+
+        position="0 -100 0"
+
+        radius="0.20"
+
+        height="0.01"
+
+        material="
+            color: #00FF88;
+            transparent: true;
+            opacity: 0;
+            depthWrite: false;
+        ">
+
+    </a-cylinder>
+
+
+
+    <!-- =====================================================
+         CONTENEDOR DEL ROBOT
+
+         ESTE OBJETO QUEDA FIJO DESPUÉS DE COLOCARLO.
     ====================================================== -->
 
     <a-entity
@@ -671,18 +892,20 @@
 
         rotation="0 0 0"
 
-        scale="1 1 1"
+        visible="true"
     >
+
 
 
         <!-- =================================================
              MODELO CAD
 
-             AJUSTA SOLO ESTOS 3 PARÁMETROS SI ES NECESARIO:
+             IMPORTANTE:
 
-             position
-             rotation
-             scale
+             rotation="0 90 0"
+
+             gira el modelo 90 grados para que en la vista
+             normal / IMU aparezca DE LADO.
         ================================================== -->
 
         <a-entity
@@ -695,7 +918,7 @@
 
             position="0 0 0"
 
-            rotation="0 0 0"
+            rotation="0 90 0"
 
             scale="0.01 0.01 0.01"
 
@@ -712,31 +935,7 @@
 
 
     <!-- =====================================================
-         REFERENCIA DEL ORIGEN
-         PEQUEÑO CÍRCULO ROJO
-
-         NOS AYUDA A SABER DÓNDE ESTÁ Z = 0
-    ====================================================== -->
-
-    <a-cylinder
-
-        position="0 0.01 -3"
-
-        radius="0.08"
-
-        height="0.02"
-
-        color="#FF0000"
-
-        hide-on-enter-ar>
-
-    </a-cylinder>
-
-
-
-    <!-- =====================================================
-         PISO PARA PC
-         DESAPARECE EN AR
+         PISO PARA VISTA NORMAL
     ====================================================== -->
 
     <a-plane
@@ -763,7 +962,6 @@
 
     <!-- =====================================================
          CIELO
-         DESAPARECE EN AR
     ====================================================== -->
 
     <a-sky
@@ -778,6 +976,8 @@
 
     <!-- =====================================================
          CÁMARA
+
+         EN EL TELÉFONO LA IMU CONTROLA SU ORIENTACIÓN.
     ====================================================== -->
 
     <a-entity
@@ -800,6 +1000,7 @@
 
 
     </a-entity>
+
 
 
 </a-scene>
