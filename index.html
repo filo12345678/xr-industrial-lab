@@ -99,6 +99,18 @@
             color: white;
         }
 
+
+        #controlesPC {
+
+            margin-top: 10px;
+
+            padding-top: 10px;
+
+            border-top: 1px solid #777;
+
+            color: white;
+        }
+
     </style>
 
 
@@ -201,13 +213,12 @@
 
 
         // =====================================================
-        // MOVIMIENTO VERTICAL PARA PC
+        // MOVIMIENTO VERTICAL EN PC
         //
         // E = SUBIR
         // Q = BAJAR / AGACHARSE
         //
-        // Este movimiento se desactiva automáticamente
-        // al entrar en AR o VR.
+        // Este componente solamente actúa fuera de AR y VR.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -217,25 +228,19 @@
                 schema: {
 
                     velocidad: {
-
                         type: 'number',
-
                         default: 1.5
                     },
 
 
                     alturaMinima: {
-
                         type: 'number',
-
                         default: 0.3
                     },
 
 
                     alturaMaxima: {
-
                         type: 'number',
-
                         default: 4.0
                     }
 
@@ -245,9 +250,7 @@
                 init: function () {
 
                     this.subir = false;
-
                     this.bajar = false;
-
 
 
                     // =========================================
@@ -271,7 +274,6 @@
                         }
 
                     };
-
 
 
                     // =========================================
@@ -328,9 +330,8 @@
                         this.el.sceneEl;
 
 
-
                     // =========================================
-                    // NO INTERFERIR EN AR O VR
+                    // NO INTERFERIR CON AR / VR
                     // =========================================
 
                     if (
@@ -343,14 +344,12 @@
                     }
 
 
-
                     const dt =
                         deltaTime / 1000;
 
 
                     const posicion =
                         this.el.object3D.position;
-
 
 
                     // =========================================
@@ -360,12 +359,10 @@
                     if (this.subir) {
 
                         posicion.y +=
-
                             this.data.velocidad *
                             dt;
 
                     }
-
 
 
                     // =========================================
@@ -375,12 +372,10 @@
                     if (this.bajar) {
 
                         posicion.y -=
-
                             this.data.velocidad *
                             dt;
 
                     }
-
 
 
                     // =========================================
@@ -428,6 +423,7 @@
 
         async function detectarCompatibilidadXR() {
 
+
             const estadoWebXR =
                 document.getElementById(
                     "estadoWebXR"
@@ -444,7 +440,6 @@
                 document.getElementById(
                     "estadoAR"
                 );
-
 
 
             if (!navigator.xr) {
@@ -472,9 +467,7 @@
 
 
                 return;
-
             }
-
 
 
             estadoWebXR.innerHTML =
@@ -482,7 +475,6 @@
 
             estadoWebXR.className =
                 "ok";
-
 
 
             // =================================================
@@ -527,7 +519,6 @@
                     "error";
 
             }
-
 
 
             // =================================================
@@ -576,11 +567,11 @@
         }
 
 
-
         window.addEventListener(
             "load",
             detectarCompatibilidadXR
         );
+
 
     </script>
 
@@ -589,7 +580,6 @@
 
 
 <body>
-
 
 
 <!-- =========================================================
@@ -606,7 +596,6 @@
     </div>
 
 
-
     <div
         id="estadoWebXR"
         class="esperando">
@@ -614,7 +603,6 @@
         WebXR: comprobando...
 
     </div>
-
 
 
     <div
@@ -626,7 +614,6 @@
     </div>
 
 
-
     <div
         id="estadoAR"
         class="esperando">
@@ -635,6 +622,32 @@
 
     </div>
 
+
+    <div id="controlesPC">
+
+        <b>Controles PC</b>
+
+        <br>
+
+        W / S = adelante / atrás
+
+        <br>
+
+        A / D = izquierda / derecha
+
+        <br>
+
+        E = subir
+
+        <br>
+
+        Q = bajar / agacharse
+
+        <br>
+
+        Mouse = mirar
+
+    </div>
 
 
     <div id="instruccionAR">
@@ -657,7 +670,7 @@
 
 
     xr-mode-ui="
-        XRMode: xr
+        XRMode: xr;
     "
 
 
@@ -706,7 +719,6 @@
     </a-light>
 
 
-
     <a-light
 
         type="directional"
@@ -722,9 +734,7 @@
 
 
     <!-- =====================================================
-         MODELO INDUSTRIAL COMPLETO
-
-         Este grupo será movido por WebXR Hit Test.
+         CELDA INDUSTRIAL COMPLETA
     ====================================================== -->
 
     <a-entity
@@ -864,7 +874,10 @@
 
                 color="#90A4AE"
 
-                metalness="0.6">
+                material="
+                    metalness: 0.6;
+                    roughness: 0.4;
+                ">
 
             </a-cylinder>
 
@@ -884,7 +897,10 @@
 
                 color="#90A4AE"
 
-                metalness="0.6">
+                material="
+                    metalness: 0.6;
+                    roughness: 0.4;
+                ">
 
             </a-cylinder>
 
@@ -929,7 +945,9 @@
 
 
 
-            <!-- PATAS -->
+            <!-- =================================================
+                 PATAS
+            ================================================== -->
 
             <a-box
                 position="-2.1 0.48 -0.55"
@@ -968,7 +986,9 @@
 
 
 
-            <!-- TRAVESAÑOS -->
+            <!-- =================================================
+                 TRAVESAÑOS
+            ================================================== -->
 
             <a-box
                 position="-2.1 0.25 0"
@@ -989,7 +1009,9 @@
 
 
 
-            <!-- CAJA FIJA -->
+            <!-- =================================================
+                 CAJA FIJA
+            ================================================== -->
 
             <a-box
 
@@ -1009,7 +1031,9 @@
 
 
 
-            <!-- PRODUCTO EN MOVIMIENTO -->
+            <!-- =================================================
+                 PRODUCTO EN MOVIMIENTO
+            ================================================== -->
 
             <a-box
 
@@ -1048,7 +1072,6 @@
         <a-entity id="sensorFotoelectrico">
 
 
-
             <!-- SOPORTE VERTICAL -->
 
             <a-cylinder
@@ -1062,7 +1085,6 @@
                 color="#263238">
 
             </a-cylinder>
-
 
 
             <!-- BRAZO -->
@@ -1082,8 +1104,7 @@
             </a-box>
 
 
-
-            <!-- CABEZA DEL SENSOR -->
+            <!-- CABEZA -->
 
             <a-box
 
@@ -1100,7 +1121,6 @@
             </a-box>
 
 
-
             <!-- INDICADOR -->
 
             <a-sphere
@@ -1111,6 +1131,11 @@
 
                 color="#00E676"
 
+                material="
+                    emissive: #00E676;
+                    emissiveIntensity: 0.8;
+                "
+
                 animation="
                     property: material.emissiveIntensity;
                     from: 0;
@@ -1118,15 +1143,9 @@
                     dur: 700;
                     dir: alternate;
                     loop: true;
-                "
-
-                material="
-                    emissive: #00E676;
-                    emissiveIntensity: 0.8;
                 ">
 
             </a-sphere>
-
 
 
             <!-- HAZ -->
@@ -1168,7 +1187,6 @@
         >
 
 
-
             <!-- POSTE -->
 
             <a-box
@@ -1184,7 +1202,6 @@
                 color="#455A64">
 
             </a-box>
-
 
 
             <!-- GABINETE -->
@@ -1206,7 +1223,6 @@
             </a-box>
 
 
-
             <!-- MARCO -->
 
             <a-box
@@ -1222,7 +1238,6 @@
                 color="#263238">
 
             </a-box>
-
 
 
             <!-- PANTALLA -->
@@ -1247,7 +1262,6 @@
             </a-box>
 
 
-
             <!-- BOTÓN VERDE -->
 
             <a-cylinder
@@ -1265,7 +1279,6 @@
             </a-cylinder>
 
 
-
             <!-- BOTÓN ROJO -->
 
             <a-cylinder
@@ -1281,7 +1294,6 @@
                 color="#F44336">
 
             </a-cylinder>
-
 
 
             <!-- BALIZA -->
@@ -1318,7 +1330,6 @@
 
             position="2.7 0 -0.25"
         >
-
 
 
             <!-- TABLERO -->
@@ -1379,7 +1390,6 @@
             </a-box>
 
 
-
             <!-- PRODUCTO TERMINADO -->
 
             <a-box
@@ -1420,7 +1430,6 @@
             color="#FFC107">
 
         </a-box>
-
 
 
         <a-box
@@ -1481,12 +1490,15 @@
 
 
     <!-- =====================================================
-         CÁMARA Y MOVIMIENTO
+         CÁMARA / USUARIO
 
-         W / S = adelante / atrás
-         A / D = izquierda / derecha
-         E = subir
-         Q = bajar / agacharse
+         POSICIÓN INICIAL:
+         y = 1.6 m
+
+         W/S = avanzar/retroceder
+         A/D = izquierda/derecha
+         E   = subir
+         Q   = bajar
          Mouse = mirar
     ====================================================== -->
 
@@ -1506,7 +1518,12 @@
 
         <a-camera
 
-            look-controls
+            look-controls="
+                enabled: true;
+                mouseEnabled: true;
+                touchEnabled: true;
+                magicWindowTrackingEnabled: true;
+            "
 
             wasd-controls="
                 acceleration: 25;
