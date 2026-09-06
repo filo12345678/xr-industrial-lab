@@ -30,10 +30,14 @@
 
         html,
         body {
+
             margin: 0;
+
             width: 100%;
             height: 100%;
+
             overflow: hidden;
+
             font-family: Arial, sans-serif;
         }
 
@@ -106,7 +110,6 @@
         }
 
 
-
         /* ==================================================
            PANEL COMPACTO EN AR
         ================================================== */
@@ -149,7 +152,7 @@
 
 
         // =====================================================
-        // ESTADO DE CARGA DEL GLB
+        // CONTROL DE CARGA DEL MODELO GLB
         // =====================================================
 
         AFRAME.registerComponent(
@@ -166,7 +169,7 @@
                         function () {
 
                             console.log(
-                                'Modelo GLB cargado correctamente.'
+                                'Modelo GLB cargado correctamente'
                             );
 
 
@@ -281,14 +284,17 @@
 
 
         // =====================================================
-        // MOVIMIENTO PARA PC
+        // MOVIMIENTO COMPLETO PARA PC
         //
-        // W = adelante
-        // S = atrás
+        // W = avanzar
+        // S = retroceder
         // A = izquierda
         // D = derecha
+        //
         // E = subir
         // Q = bajar
+        //
+        // Mouse = mirar
         // =====================================================
 
         AFRAME.registerComponent(
@@ -393,7 +399,9 @@
 
 
                     if (!deltaTime) {
+
                         return;
+
                     }
 
 
@@ -403,8 +411,7 @@
 
 
                     // =========================================
-                    // EN AR / VR:
-                    // NO INTERFERIR CON EL TRACKING
+                    // EN AR / VR NO USAR TECLADO
                     // =========================================
 
                     if (
@@ -420,6 +427,13 @@
 
 
 
+                    if (!this.camara) {
+
+                        return;
+
+                    }
+
+
                     const dt =
                         deltaTime / 1000;
 
@@ -428,6 +442,10 @@
                         this.el.object3D;
 
 
+
+                    // =========================================
+                    // ORIENTACIÓN DE LA CÁMARA
+                    // =========================================
 
                     const quaternion =
                         new THREE.Quaternion();
@@ -441,7 +459,7 @@
 
 
                     // =========================================
-                    // ADELANTE
+                    // DIRECCIÓN HACIA ADELANTE
                     // =========================================
 
                     const adelante =
@@ -471,7 +489,7 @@
 
 
                     // =========================================
-                    // DERECHA
+                    // DIRECCIÓN HACIA LA DERECHA
                     // =========================================
 
                     const derecha =
@@ -501,7 +519,7 @@
 
 
                     // =========================================
-                    // WASD
+                    // W
                     // =========================================
 
                     if (
@@ -520,6 +538,11 @@
                     }
 
 
+
+                    // =========================================
+                    // S
+                    // =========================================
+
                     if (
                         this.teclas['KeyS']
                     ) {
@@ -536,6 +559,11 @@
                     }
 
 
+
+                    // =========================================
+                    // D
+                    // =========================================
+
                     if (
                         this.teclas['KeyD']
                     ) {
@@ -551,6 +579,11 @@
 
                     }
 
+
+
+                    // =========================================
+                    // A
+                    // =========================================
 
                     if (
                         this.teclas['KeyA']
@@ -579,7 +612,8 @@
 
                         rig.position.y +=
 
-                            this.data.velocidadVertical *
+                            this.data
+                                .velocidadVertical *
                             dt;
 
                     }
@@ -596,23 +630,47 @@
 
                         rig.position.y -=
 
-                            this.data.velocidadVertical *
+                            this.data
+                                .velocidadVertical *
                             dt;
 
                     }
 
 
 
+                    // =========================================
+                    // LÍMITES DE ALTURA
+                    // =========================================
+
                     rig.position.y =
                         THREE.MathUtils.clamp(
 
                             rig.position.y,
 
-                            this.data.alturaMinima,
+                            this.data
+                                .alturaMinima,
 
-                            this.data.alturaMaxima
+                            this.data
+                                .alturaMaxima
 
                         );
+
+                },
+
+
+                remove: function () {
+
+
+                    window.removeEventListener(
+                        'keydown',
+                        this.keyDown
+                    );
+
+
+                    window.removeEventListener(
+                        'keyup',
+                        this.keyUp
+                    );
 
                 }
 
@@ -622,13 +680,11 @@
 
 
         // =====================================================
-        // AR ESTABLE
+        // AR CON HIT TEST
         //
-        // SOLO HIT TEST.
-        // NO USAMOS XRAnchor.
+        // El modelo se coloca UNA SOLA VEZ.
         //
-        // El punto se guarda UNA SOLA VEZ dentro
-        // del XRReferenceSpace "local".
+        // Después deja de actualizarse.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -702,7 +758,7 @@
 
 
                     // =================================================
-                    // FUNCIÓN DE SELECCIÓN
+                    // TOCAR PARA COLOCAR
                     // =================================================
 
                     this.seleccionar =
@@ -738,7 +794,7 @@
 
 
                             // =========================================
-                            // GUARDAR ESA POSICIÓN UNA SOLA VEZ
+                            // COPIAR LA POSICIÓN DETECTADA
                             // =========================================
 
                             this.modelo.object3D.position.set(
@@ -753,11 +809,15 @@
 
 
 
+                            // Mostrar modelo.
+
                             this.modelo.setAttribute(
                                 'visible',
                                 true
                             );
 
+
+                            // Ocultar retículo.
 
                             this.reticulo.setAttribute(
                                 'visible',
@@ -765,9 +825,7 @@
                             );
 
 
-                            // =========================================
-                            // BLOQUEAR
-                            // =========================================
+                            // Bloquear ubicación.
 
                             this.colocado =
                                 true;
@@ -808,10 +866,12 @@
 
 
                                                 if (
+
                                                     this.colocado &&
                                                     this.escena.is(
                                                         'ar-mode'
                                                     )
+
                                                 ) {
 
                                                     this.panel.style.display =
@@ -844,19 +904,18 @@
                         async () => {
 
 
-                            // Guardar posición usada en PC.
+                            // =========================================
+                            // GUARDAR POSICIÓN DEL PC
+                            // =========================================
 
                             this.posicionPC.copy(
                                 this.rig.object3D.position
                             );
 
 
+
                             // =========================================
-                            // MUY IMPORTANTE:
-                            //
-                            // En XR el dispositivo controla la pose.
-                            //
-                            // No conservar el 1.6 m artificial del PC.
+                            // EN XR EL DISPOSITIVO MANEJA LA POSE
                             // =========================================
 
                             this.rig.object3D.position.set(
@@ -886,7 +945,9 @@
 
 
 
-                            // Modelo oculto mientras buscamos.
+                            // =========================================
+                            // OCULTAR MODELO HASTA SELECCIONAR
+                            // =========================================
 
                             this.modelo.setAttribute(
                                 'visible',
@@ -902,7 +963,7 @@
 
 
                             // =========================================
-                            // PANEL AR COMPACTO
+                            // PANEL COMPACTO
                             // =========================================
 
                             this.panel.style.display =
@@ -929,7 +990,7 @@
 
 
                                 // =====================================
-                                // SESIÓN WEBXR
+                                // SESIÓN XR
                                 // =====================================
 
                                 this.session =
@@ -952,8 +1013,6 @@
 
                                 // =====================================
                                 // ESPACIO LOCAL
-                                //
-                                // ESTE ES NUESTRO MUNDO ESTABLE
                                 // =====================================
 
                                 this.referenceSpace =
@@ -977,7 +1036,7 @@
 
 
                                 // =====================================
-                                // FUENTE HIT TEST
+                                // HIT TEST
                                 // =====================================
 
                                 this.hitTestSource =
@@ -994,7 +1053,7 @@
 
 
                                 // =====================================
-                                // TOQUE
+                                // EVENTO DE TOQUE
                                 // =====================================
 
                                 this.session.addEventListener(
@@ -1045,6 +1104,7 @@
                                 );
 
                             }
+
 
 
                             if (
@@ -1119,7 +1179,7 @@
 
 
                             // =========================================
-                            // RESTAURAR INTERFAZ
+                            // RESTAURAR PANEL
                             // =========================================
 
                             this.reticulo.setAttribute(
@@ -1153,7 +1213,7 @@
 
 
                 // =====================================================
-                // FRAME XR
+                // ACTUALIZACIÓN DURANTE AR
                 // =====================================================
 
                 tick: function () {
@@ -1169,13 +1229,10 @@
 
 
 
-                    // =================================================
-                    // UNA VEZ COLOCADO:
-                    //
-                    // NO TOCAMOS MÁS LA POSICIÓN.
-                    //
-                    // ESTE ES EL CAMBIO CLAVE.
-                    // =================================================
+                    // =========================================
+                    // YA COLOCADO:
+                    // NO SE MUEVE MÁS
+                    // =========================================
 
                     if (
                         this.colocado
@@ -1231,8 +1288,10 @@
 
 
                     if (
+
                         !resultados ||
                         resultados.length === 0
+
                     ) {
 
 
@@ -1267,34 +1326,28 @@
 
 
 
-                    // =================================================
-                    // GUARDAR POSICIÓN ACTUAL
-                    // =================================================
+                    // =========================================
+                    // GUARDAR POSICIÓN DETECTADA
+                    // =========================================
 
-                    this.ultimaPosicion =
-                        {
+                    this.ultimaPosicion = {
 
-                            x:
-                                pose.transform
-                                    .position.x,
+                        x:
+                            pose.transform.position.x,
 
-                            y:
-                                pose.transform
-                                    .position.y,
+                        y:
+                            pose.transform.position.y,
 
-                            z:
-                                pose.transform
-                                    .position.z
+                        z:
+                            pose.transform.position.z
 
-                        };
+                    };
 
 
 
-                    // =================================================
-                    // MOVER SOLAMENTE EL RETÍCULO
-                    //
-                    // EL ROBOT SIGUE OCULTO.
-                    // =================================================
+                    // =========================================
+                    // MOVER RETÍCULO
+                    // =========================================
 
                     this.reticulo.object3D.position.set(
 
@@ -1329,7 +1382,7 @@
 
 
         // =====================================================
-        // COMPATIBILIDAD WEBXR
+        // DETECCIÓN DE COMPATIBILIDAD WEBXR
         // =====================================================
 
         async function comprobarXR() {
@@ -1501,7 +1554,7 @@
 
 
 <!-- =========================================================
-     PANEL
+     PANEL DE INFORMACIÓN
 ========================================================= -->
 
 <div id="overlay">
@@ -1514,6 +1567,7 @@
     </div>
 
 
+
     <div
         id="estadoWebXR"
         class="esperando">
@@ -1521,6 +1575,7 @@
         WebXR: comprobando...
 
     </div>
+
 
 
     <div
@@ -1532,6 +1587,7 @@
     </div>
 
 
+
     <div
         id="estadoAR"
         class="esperando">
@@ -1539,6 +1595,7 @@
         AR: comprobando...
 
     </div>
+
 
 
     <div
@@ -1550,6 +1607,10 @@
     </div>
 
 
+
+    <!-- =====================================================
+         CONTROLES PC
+    ====================================================== -->
 
     <div id="controlesPC">
 
@@ -1592,7 +1653,7 @@
 
 
 <!-- =========================================================
-     ESCENA
+     ESCENA PRINCIPAL
 ========================================================= -->
 
 <a-scene
@@ -1629,7 +1690,7 @@
 
 
     <!-- =====================================================
-         RECURSOS
+         MODELO GLB
     ====================================================== -->
 
     <a-assets timeout="30000">
@@ -1693,7 +1754,7 @@
 
 
     <!-- =====================================================
-         RETÍCULO AR
+         RETÍCULO DE AR
     ====================================================== -->
 
     <a-ring
@@ -1706,9 +1767,9 @@
 
         rotation="-90 0 0"
 
-        radius-inner="0.10"
+        radius-inner="0.06"
 
-        radius-outer="0.16"
+        radius-outer="0.10"
 
         color="#00FF88"
 
@@ -1723,7 +1784,7 @@
 
 
     <!-- =====================================================
-         MODELO CAD
+         CONTENEDOR DEL MODELO CAD
     ====================================================== -->
 
     <a-entity
@@ -1735,6 +1796,22 @@
         visible="true"
     >
 
+
+
+        <!-- =================================================
+             BRAZO ROBÓTICO
+
+             CAMBIO PRINCIPAL:
+
+             ANTES:
+             scale="0.01 0.01 0.01"
+
+             AHORA:
+             scale="0.003 0.003 0.003"
+
+             El modelo visualmente queda al 30 %
+             del tamaño anterior.
+        ================================================== -->
 
         <a-entity
 
@@ -1748,7 +1825,7 @@
 
             rotation="0 90 0"
 
-            scale="0.01 0.01 0.01"
+            scale="0.003 0.003 0.003"
 
             shadow="
                 cast: true;
@@ -1803,7 +1880,7 @@
 
 
     <!-- =====================================================
-         RIG
+         RIG DEL USUARIO
     ====================================================== -->
 
     <a-entity
@@ -1820,6 +1897,11 @@
         "
     >
 
+
+
+        <!-- =================================================
+             CÁMARA
+        ================================================== -->
 
         <a-camera
 
