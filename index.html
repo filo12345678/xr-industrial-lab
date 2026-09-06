@@ -15,6 +15,7 @@
 
     <title>Laboratorio XR - Modelo CAD Industrial</title>
 
+
     <!-- =====================================================
          A-FRAME
     ====================================================== -->
@@ -84,16 +85,19 @@
 
 
         .ok {
+
             color: #00ff88;
         }
 
 
         .error {
+
             color: #ff5555;
         }
 
 
         .esperando {
+
             color: #ffcc00;
         }
 
@@ -110,13 +114,14 @@
         }
 
 
+
         /* ==================================================
-           PANEL COMPACTO EN AR
+           PANEL PEQUEÑO DURANTE AR
         ================================================== */
 
         #overlay.modoAR {
 
-            width: 260px;
+            width: 245px;
 
             background: rgba(0, 0, 0, 0.65);
         }
@@ -140,8 +145,6 @@
             padding: 0;
 
             border: none;
-
-            font-size: 14px;
         }
 
     </style>
@@ -152,7 +155,7 @@
 
 
         // =====================================================
-        // CONTROL DE CARGA DEL MODELO GLB
+        // COMPROBAR CARGA DEL GLB
         // =====================================================
 
         AFRAME.registerComponent(
@@ -197,7 +200,7 @@
                         function (evento) {
 
                             console.error(
-                                'Error cargando modelo GLB:',
+                                'Error cargando GLB:',
                                 evento.detail
                             );
 
@@ -228,66 +231,10 @@
 
 
         // =====================================================
-        // OCULTAR PISO Y CIELO EN AR
-        // =====================================================
-
-        AFRAME.registerComponent(
-            'ocultar-en-ar',
-            {
-
-                init: function () {
-
-                    const elemento =
-                        this.el;
-
-
-                    const escena =
-                        elemento.sceneEl;
-
-
-                    escena.addEventListener(
-                        'enter-vr',
-                        function () {
-
-                            if (
-                                escena.is('ar-mode')
-                            ) {
-
-                                elemento.setAttribute(
-                                    'visible',
-                                    false
-                                );
-
-                            }
-
-                        }
-                    );
-
-
-                    escena.addEventListener(
-                        'exit-vr',
-                        function () {
-
-                            elemento.setAttribute(
-                                'visible',
-                                true
-                            );
-
-                        }
-                    );
-
-                }
-
-            }
-        );
-
-
-
-        // =====================================================
-        // MOVIMIENTO COMPLETO PARA PC
+        // MOVIMIENTO PC
         //
-        // W = avanzar
-        // S = retroceder
+        // W = adelante
+        // S = atrás
         // A = izquierda
         // D = derecha
         //
@@ -330,6 +277,7 @@
 
 
                 init: function () {
+
 
                     this.teclas = {};
 
@@ -399,9 +347,7 @@
 
 
                     if (!deltaTime) {
-
                         return;
-
                     }
 
 
@@ -411,7 +357,7 @@
 
 
                     // =========================================
-                    // EN AR / VR NO USAR TECLADO
+                    // NO USAR TECLADO DURANTE XR
                     // =========================================
 
                     if (
@@ -459,7 +405,7 @@
 
 
                     // =========================================
-                    // DIRECCIÓN HACIA ADELANTE
+                    // ADELANTE
                     // =========================================
 
                     const adelante =
@@ -489,7 +435,7 @@
 
 
                     // =========================================
-                    // DIRECCIÓN HACIA LA DERECHA
+                    // DERECHA
                     // =========================================
 
                     const derecha =
@@ -639,7 +585,7 @@
 
 
                     // =========================================
-                    // LÍMITES DE ALTURA
+                    // LÍMITES
                     // =========================================
 
                     rig.position.y =
@@ -680,93 +626,125 @@
 
 
         // =====================================================
-        // AR CON HIT TEST
+        // CORRECCIÓN DEL RIG PARA XR
         //
-        // El modelo se coloca UNA SOLA VEZ.
+        // EN PC:
+        // altura inicial = 1.6 m
         //
-        // Después deja de actualizarse.
+        // EN AR / VR:
+        // dejamos que WebXR determine la posición física.
         // =====================================================
 
         AFRAME.registerComponent(
-            'ar-fijo-estable',
+            'ajuste-rig-xr',
             {
 
                 init: function () {
 
 
-                    this.escena =
+                    const rig =
                         this.el;
 
 
-                    this.modelo =
-                        document.getElementById(
-                            'objetoXR'
-                        );
+                    this.posicionAnterior =
+                        new THREE.Vector3();
 
 
-                    this.reticulo =
-                        document.getElementById(
-                            'reticuloAR'
-                        );
+
+                    rig.sceneEl.addEventListener(
+                        'enter-vr',
+                        () => {
 
 
-                    this.rig =
-                        document.getElementById(
-                            'rig'
-                        );
+                            // Guardar posición PC.
+
+                            this.posicionAnterior.copy(
+                                rig.object3D.position
+                            );
 
 
-                    this.panel =
+                            // En XR no usar el desplazamiento
+                            // artificial del escritorio.
+
+                            rig.object3D.position.set(
+                                0,
+                                0,
+                                0
+                            );
+
+                        }
+                    );
+
+
+
+                    rig.sceneEl.addEventListener(
+                        'exit-vr',
+                        () => {
+
+
+                            // Restaurar posición PC.
+
+                            rig.object3D.position.copy(
+                                this.posicionAnterior
+                            );
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        // =====================================================
+        // INTERFAZ DEL MODO AR
+        //
+        // IMPORTANTE:
+        //
+        // ESTE COMPONENTE NO MUEVE EL MODELO.
+        //
+        // SOLO CAMBIA MENSAJES Y OCULTA EL PANEL.
+        //
+        // TODA LA POSICIÓN AR LA MANEJA A-FRAME.
+        // =====================================================
+
+        AFRAME.registerComponent(
+            'interfaz-ar',
+            {
+
+                init: function () {
+
+
+                    const escena =
+                        this.el;
+
+
+                    const panel =
                         document.getElementById(
                             'overlay'
                         );
 
 
-                    this.texto =
+                    const texto =
                         document.getElementById(
                             'instruccionAR'
                         );
 
 
-                    this.session =
-                        null;
-
-
-                    this.viewerSpace =
-                        null;
-
-
-                    this.referenceSpace =
-                        null;
-
-
-                    this.hitTestSource =
-                        null;
-
-
-                    this.ultimaPosicion =
-                        null;
-
-
-                    this.colocado =
-                        false;
-
-
-                    this.posicionPC =
-                        new THREE.Vector3();
-
-
 
                     // =================================================
-                    // TOCAR PARA COLOCAR
+                    // ENTRAR EN AR
                     // =================================================
 
-                    this.seleccionar =
+                    escena.addEventListener(
+                        'enter-vr',
                         () => {
 
 
                             if (
-                                !this.escena.is('ar-mode')
+                                !escena.is('ar-mode')
                             ) {
 
                                 return;
@@ -774,68 +752,106 @@
                             }
 
 
-                            if (
-                                this.colocado
-                            ) {
+                            if (panel) {
 
-                                return;
+                                panel.style.display =
+                                    'block';
+
+
+                                panel.style.opacity =
+                                    '1';
+
+
+                                panel.classList.add(
+                                    'modoAR'
+                                );
 
                             }
 
 
-                            if (
-                                !this.ultimaPosicion
-                            ) {
+                            if (texto) {
 
-                                return;
+                                texto.innerHTML =
+                                    "Mueve lentamente el teléfono." +
+                                    "<br>" +
+                                    "Busca una mesa o el piso.";
 
                             }
 
-
-
-                            // =========================================
-                            // COPIAR LA POSICIÓN DETECTADA
-                            // =========================================
-
-                            this.modelo.object3D.position.set(
-
-                                this.ultimaPosicion.x,
-
-                                this.ultimaPosicion.y,
-
-                                this.ultimaPosicion.z
-
-                            );
+                        }
+                    );
 
 
 
-                            // Mostrar modelo.
+                    // =================================================
+                    // HIT TEST COMENZÓ
+                    // =================================================
 
-                            this.modelo.setAttribute(
-                                'visible',
-                                true
-                            );
-
-
-                            // Ocultar retículo.
-
-                            this.reticulo.setAttribute(
-                                'visible',
-                                false
-                            );
+                    escena.addEventListener(
+                        'ar-hit-test-start',
+                        () => {
 
 
-                            // Bloquear ubicación.
+                            if (texto) {
 
-                            this.colocado =
-                                true;
+                                texto.innerHTML =
+                                    "Buscando superficie..." +
+                                    "<br>" +
+                                    "Mueve lentamente el teléfono.";
+
+                            }
+
+                        }
+                    );
 
 
 
-                            this.texto.innerHTML =
-                                "<span class='ok'>" +
-                                "Modelo colocado y fijado." +
-                                "</span>";
+                    // =================================================
+                    // SUPERFICIE DETECTADA
+                    // =================================================
+
+                    escena.addEventListener(
+                        'ar-hit-test-achieved',
+                        () => {
+
+
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Superficie detectada." +
+                                    "</span>" +
+                                    "<br>" +
+                                    "Toca la pantalla para " +
+                                    "colocar el robot.";
+
+                            }
+
+                        }
+                    );
+
+
+
+                    // =================================================
+                    // OBJETO COLOCADO
+                    //
+                    // A-FRAME YA HIZO EL TRABAJO.
+                    // NO TOCAMOS LA POSICIÓN.
+                    // =================================================
+
+                    escena.addEventListener(
+                        'ar-hit-test-select',
+                        () => {
+
+
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Robot colocado." +
+                                    "</span>";
+
+                            }
 
 
 
@@ -848,237 +864,51 @@
 
 
                                     if (
-
-                                        this.colocado &&
-                                        this.escena.is(
+                                        !escena.is(
                                             'ar-mode'
                                         )
-
                                     ) {
 
-
-                                        this.panel.style.opacity =
-                                            '0';
-
-
-                                        setTimeout(
-                                            () => {
-
-
-                                                if (
-
-                                                    this.colocado &&
-                                                    this.escena.is(
-                                                        'ar-mode'
-                                                    )
-
-                                                ) {
-
-                                                    this.panel.style.display =
-                                                        'none';
-
-                                                }
-
-                                            },
-
-                                            300
-                                        );
+                                        return;
 
                                     }
+
+
+                                    if (panel) {
+
+                                        panel.style.opacity =
+                                            '0';
+
+                                    }
+
+
+                                    setTimeout(
+                                        () => {
+
+
+                                            if (
+
+                                                panel &&
+                                                escena.is(
+                                                    'ar-mode'
+                                                )
+
+                                            ) {
+
+                                                panel.style.display =
+                                                    'none';
+
+                                            }
+
+                                        },
+
+                                        300
+                                    );
 
                                 },
 
                                 700
                             );
-
-                        };
-
-
-
-                    // =================================================
-                    // ENTRAR EN XR
-                    // =================================================
-
-                    this.escena.addEventListener(
-                        'enter-vr',
-                        async () => {
-
-
-                            // =========================================
-                            // GUARDAR POSICIÓN DEL PC
-                            // =========================================
-
-                            this.posicionPC.copy(
-                                this.rig.object3D.position
-                            );
-
-
-
-                            // =========================================
-                            // EN XR EL DISPOSITIVO MANEJA LA POSE
-                            // =========================================
-
-                            this.rig.object3D.position.set(
-                                0,
-                                0,
-                                0
-                            );
-
-
-
-                            if (
-                                !this.escena.is('ar-mode')
-                            ) {
-
-                                return;
-
-                            }
-
-
-
-                            this.colocado =
-                                false;
-
-
-                            this.ultimaPosicion =
-                                null;
-
-
-
-                            // =========================================
-                            // OCULTAR MODELO HASTA SELECCIONAR
-                            // =========================================
-
-                            this.modelo.setAttribute(
-                                'visible',
-                                false
-                            );
-
-
-                            this.reticulo.setAttribute(
-                                'visible',
-                                false
-                            );
-
-
-
-                            // =========================================
-                            // PANEL COMPACTO
-                            // =========================================
-
-                            this.panel.style.display =
-                                'block';
-
-
-                            this.panel.style.opacity =
-                                '1';
-
-
-                            this.panel.classList.add(
-                                'modoAR'
-                            );
-
-
-                            this.texto.innerHTML =
-                                "Buscando superficie..." +
-                                "<br>" +
-                                "Mueve lentamente el teléfono.";
-
-
-
-                            try {
-
-
-                                // =====================================
-                                // SESIÓN XR
-                                // =====================================
-
-                                this.session =
-                                    this.escena.renderer.xr
-                                        .getSession();
-
-
-
-                                if (
-                                    !this.session
-                                ) {
-
-                                    throw new Error(
-                                        'No existe sesión XR.'
-                                    );
-
-                                }
-
-
-
-                                // =====================================
-                                // ESPACIO LOCAL
-                                // =====================================
-
-                                this.referenceSpace =
-                                    await this.session
-                                        .requestReferenceSpace(
-                                            'local'
-                                        );
-
-
-
-                                // =====================================
-                                // ESPACIO DE LA CÁMARA
-                                // =====================================
-
-                                this.viewerSpace =
-                                    await this.session
-                                        .requestReferenceSpace(
-                                            'viewer'
-                                        );
-
-
-
-                                // =====================================
-                                // HIT TEST
-                                // =====================================
-
-                                this.hitTestSource =
-                                    await this.session
-                                        .requestHitTestSource(
-                                            {
-
-                                                space:
-                                                    this.viewerSpace
-
-                                            }
-                                        );
-
-
-
-                                // =====================================
-                                // EVENTO DE TOQUE
-                                // =====================================
-
-                                this.session.addEventListener(
-                                    'select',
-                                    this.seleccionar
-                                );
-
-
-                            }
-
-                            catch (error) {
-
-
-                                console.error(
-                                    'Error preparando Hit Test:',
-                                    error
-                                );
-
-
-                                this.texto.innerHTML =
-                                    "<span class='error'>" +
-                                    "No se pudo iniciar Hit Test." +
-                                    "</span>";
-
-                            }
 
                         }
                     );
@@ -1089,290 +919,38 @@
                     // SALIR DE XR
                     // =================================================
 
-                    this.escena.addEventListener(
+                    escena.addEventListener(
                         'exit-vr',
                         () => {
 
 
-                            if (
-                                this.session
-                            ) {
+                            if (panel) {
 
-                                this.session.removeEventListener(
-                                    'select',
-                                    this.seleccionar
+                                panel.style.display =
+                                    'block';
+
+
+                                panel.style.opacity =
+                                    '1';
+
+
+                                panel.classList.remove(
+                                    'modoAR'
                                 );
 
                             }
 
 
+                            if (texto) {
 
-                            if (
-                                this.hitTestSource
-                            ) {
-
-                                try {
-
-                                    this.hitTestSource.cancel();
-
-                                }
-
-                                catch (error) {
-
-                                }
+                                texto.innerHTML =
+                                    "En modo AR podrás colocar " +
+                                    "el modelo sobre una superficie real.";
 
                             }
 
-
-
-                            this.session =
-                                null;
-
-
-                            this.viewerSpace =
-                                null;
-
-
-                            this.referenceSpace =
-                                null;
-
-
-                            this.hitTestSource =
-                                null;
-
-
-                            this.ultimaPosicion =
-                                null;
-
-
-                            this.colocado =
-                                false;
-
-
-
-                            // =========================================
-                            // RESTAURAR POSICIÓN PC
-                            // =========================================
-
-                            this.rig.object3D.position.copy(
-                                this.posicionPC
-                            );
-
-
-
-                            // =========================================
-                            // RESTAURAR MODELO
-                            // =========================================
-
-                            this.modelo.object3D.position.set(
-                                0,
-                                0,
-                                -3
-                            );
-
-
-                            this.modelo.setAttribute(
-                                'visible',
-                                true
-                            );
-
-
-
-                            // =========================================
-                            // RESTAURAR PANEL
-                            // =========================================
-
-                            this.reticulo.setAttribute(
-                                'visible',
-                                false
-                            );
-
-
-                            this.panel.style.display =
-                                'block';
-
-
-                            this.panel.style.opacity =
-                                '1';
-
-
-                            this.panel.classList.remove(
-                                'modoAR'
-                            );
-
-
-                            this.texto.innerHTML =
-                                "En modo AR podrás colocar " +
-                                "el modelo sobre una superficie real.";
-
                         }
                     );
-
-                },
-
-
-
-                // =====================================================
-                // ACTUALIZACIÓN DURANTE AR
-                // =====================================================
-
-                tick: function () {
-
-
-                    if (
-                        !this.escena.is('ar-mode')
-                    ) {
-
-                        return;
-
-                    }
-
-
-
-                    // =========================================
-                    // YA COLOCADO:
-                    // NO SE MUEVE MÁS
-                    // =========================================
-
-                    if (
-                        this.colocado
-                    ) {
-
-                        return;
-
-                    }
-
-
-
-                    if (
-                        !this.hitTestSource ||
-                        !this.referenceSpace
-                    ) {
-
-                        return;
-
-                    }
-
-
-
-                    const frame =
-                        this.escena.frame;
-
-
-                    if (!frame) {
-
-                        return;
-
-                    }
-
-
-
-                    let resultados;
-
-
-                    try {
-
-                        resultados =
-                            frame.getHitTestResults(
-                                this.hitTestSource
-                            );
-
-                    }
-
-                    catch (error) {
-
-                        return;
-
-                    }
-
-
-
-                    if (
-
-                        !resultados ||
-                        resultados.length === 0
-
-                    ) {
-
-
-                        this.reticulo.setAttribute(
-                            'visible',
-                            false
-                        );
-
-
-                        return;
-
-                    }
-
-
-
-                    const resultado =
-                        resultados[0];
-
-
-                    const pose =
-                        resultado.getPose(
-                            this.referenceSpace
-                        );
-
-
-
-                    if (!pose) {
-
-                        return;
-
-                    }
-
-
-
-                    // =========================================
-                    // GUARDAR POSICIÓN DETECTADA
-                    // =========================================
-
-                    this.ultimaPosicion = {
-
-                        x:
-                            pose.transform.position.x,
-
-                        y:
-                            pose.transform.position.y,
-
-                        z:
-                            pose.transform.position.z
-
-                    };
-
-
-
-                    // =========================================
-                    // MOVER RETÍCULO
-                    // =========================================
-
-                    this.reticulo.object3D.position.set(
-
-                        this.ultimaPosicion.x,
-
-                        this.ultimaPosicion.y,
-
-                        this.ultimaPosicion.z
-
-                    );
-
-
-                    this.reticulo.setAttribute(
-                        'visible',
-                        true
-                    );
-
-
-
-                    this.texto.innerHTML =
-                        "<span class='ok'>" +
-                        "Superficie detectada." +
-                        "</span>" +
-                        "<br>" +
-                        "Toca la pantalla para colocar el modelo.";
 
                 }
 
@@ -1382,7 +960,7 @@
 
 
         // =====================================================
-        // DETECCIÓN DE COMPATIBILIDAD WEBXR
+        // COMPATIBILIDAD WEBXR
         // =====================================================
 
         async function comprobarXR() {
@@ -1407,7 +985,9 @@
 
 
 
-            if (!navigator.xr) {
+            if (
+                !navigator.xr
+            ) {
 
 
                 webxr.innerHTML =
@@ -1554,7 +1134,7 @@
 
 
 <!-- =========================================================
-     PANEL DE INFORMACIÓN
+     PANEL
 ========================================================= -->
 
 <div id="overlay">
@@ -1608,10 +1188,6 @@
 
 
 
-    <!-- =====================================================
-         CONTROLES PC
-    ====================================================== -->
-
     <div id="controlesPC">
 
         <b>Controles PC</b>
@@ -1653,7 +1229,7 @@
 
 
 <!-- =========================================================
-     ESCENA PRINCIPAL
+     ESCENA
 ========================================================= -->
 
 <a-scene
@@ -1665,13 +1241,20 @@
 
 
     webxr="
-        optionalFeatures: hit-test, dom-overlay;
+        requiredFeatures: hit-test;
+        optionalFeatures: dom-overlay;
         referenceSpaceType: local;
         overlayElement: #overlay;
     "
 
 
-    ar-fijo-estable
+    ar-hit-test="
+        target: #objetoXR;
+        type: footprint;
+    "
+
+
+    interfaz-ar
 
 
     renderer="
@@ -1679,18 +1262,12 @@
         antialias: true;
         alpha: true;
     "
-
-
-    background="
-        color: #DCE6EA;
-        transparent: true;
-    "
 >
 
 
 
     <!-- =====================================================
-         MODELO GLB
+         RECURSOS
     ====================================================== -->
 
     <a-assets timeout="30000">
@@ -1731,7 +1308,7 @@
 
         color="#FFFFFF"
 
-        intensity="1"
+        intensity="0.8"
 
         position="-3 5 3">
 
@@ -1739,52 +1316,20 @@
 
 
 
-    <a-light
-
-        type="directional"
-
-        color="#FFFFFF"
-
-        intensity="0.5"
-
-        position="4 3 -4">
-
-    </a-light>
-
-
-
     <!-- =====================================================
-         RETÍCULO DE AR
-    ====================================================== -->
-
-    <a-ring
-
-        id="reticuloAR"
-
-        visible="false"
-
-        position="0 0 -2"
-
-        rotation="-90 0 0"
-
-        radius-inner="0.06"
-
-        radius-outer="0.10"
-
-        color="#00FF88"
-
-        material="
-            transparent: true;
-            opacity: 0.85;
-            side: double;
-        ">
-
-    </a-ring>
-
-
-
-    <!-- =====================================================
-         CONTENEDOR DEL MODELO CAD
+         MODELO INDUSTRIAL
+         
+         IMPORTANTE:
+         
+         "hide-on-enter-ar" es exactamente el mismo patrón
+         que funcionó en prueba-ar.html.
+         
+         A-FRAME SE ENCARGA DE:
+         
+         - detectar superficie
+         - retículo
+         - colocación
+         - seguimiento espacial
     ====================================================== -->
 
     <a-entity
@@ -1793,24 +1338,16 @@
 
         position="0 0 -3"
 
-        visible="true"
+        hide-on-enter-ar
     >
 
 
 
         <!-- =================================================
-             BRAZO ROBÓTICO
+             GLB
 
-             CAMBIO PRINCIPAL:
-
-             ANTES:
-             scale="0.01 0.01 0.01"
-
-             AHORA:
-             scale="0.003 0.003 0.003"
-
-             El modelo visualmente queda al 30 %
-             del tamaño anterior.
+             Escala pequeña para visualizarlo
+             como maqueta industrial.
         ================================================== -->
 
         <a-entity
@@ -1825,12 +1362,7 @@
 
             rotation="0 90 0"
 
-            scale="0.003 0.003 0.003"
-
-            shadow="
-                cast: true;
-                receive: true;
-            ">
+            scale="0.003 0.003 0.003">
 
         </a-entity>
 
@@ -1845,8 +1377,6 @@
 
     <a-plane
 
-        ocultar-en-ar
-
         position="0 0 -3"
 
         rotation="-90 0 0"
@@ -1857,9 +1387,7 @@
 
         color="#78909C"
 
-        shadow="
-            receive: true;
-        ">
+        hide-on-enter-ar>
 
     </a-plane>
 
@@ -1871,16 +1399,16 @@
 
     <a-sky
 
-        ocultar-en-ar
+        color="#DCE6EA"
 
-        color="#DCE6EA">
+        hide-on-enter-ar>
 
     </a-sky>
 
 
 
     <!-- =====================================================
-         RIG DEL USUARIO
+         RIG
     ====================================================== -->
 
     <a-entity
@@ -1888,6 +1416,8 @@
         id="rig"
 
         position="0 1.6 0"
+
+        ajuste-rig-xr
 
         movimiento-pc="
             velocidad: 2;
@@ -1898,10 +1428,6 @@
     >
 
 
-
-        <!-- =================================================
-             CÁMARA
-        ================================================== -->
 
         <a-camera
 
