@@ -30,12 +30,10 @@
 
         html,
         body {
-
             margin: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-
             font-family: Arial, sans-serif;
         }
 
@@ -82,25 +80,21 @@
 
 
         .ok {
-
             color: #00ff88;
         }
 
 
         .error {
-
             color: #ff5555;
         }
 
 
         .esperando {
-
             color: #ffcc00;
         }
 
 
         #estadoModelo,
-        #estadoAncla,
         #controlesPC,
         #instruccionAR {
 
@@ -112,13 +106,14 @@
         }
 
 
+
         /* ==================================================
-           PANEL REDUCIDO EN AR
+           PANEL COMPACTO EN AR
         ================================================== */
 
         #overlay.modoAR {
 
-            width: 255px;
+            width: 260px;
 
             background: rgba(0, 0, 0, 0.65);
         }
@@ -135,14 +130,15 @@
         }
 
 
-        #overlay.modoAR #estadoAncla,
         #overlay.modoAR #instruccionAR {
 
-            margin-top: 0;
+            margin: 0;
 
-            padding-top: 0;
+            padding: 0;
 
             border: none;
+
+            font-size: 14px;
         }
 
     </style>
@@ -153,7 +149,7 @@
 
 
         // =====================================================
-        // MODELO GLB
+        // ESTADO DE CARGA DEL GLB
         // =====================================================
 
         AFRAME.registerComponent(
@@ -168,6 +164,11 @@
                     modelo.addEventListener(
                         'model-loaded',
                         function () {
+
+                            console.log(
+                                'Modelo GLB cargado correctamente.'
+                            );
+
 
                             const estado =
                                 document.getElementById(
@@ -193,7 +194,7 @@
                         function (evento) {
 
                             console.error(
-                                'Error GLB:',
+                                'Error cargando modelo GLB:',
                                 evento.detail
                             );
 
@@ -224,7 +225,7 @@
 
 
         // =====================================================
-        // OCULTAR OBJETOS EN AR
+        // OCULTAR PISO Y CIELO EN AR
         // =====================================================
 
         AFRAME.registerComponent(
@@ -280,10 +281,14 @@
 
 
         // =====================================================
-        // MOVIMIENTO PC
+        // MOVIMIENTO PARA PC
         //
-        // W S A D
-        // Q E
+        // W = adelante
+        // S = atrás
+        // A = izquierda
+        // D = derecha
+        // E = subir
+        // Q = bajar
         // =====================================================
 
         AFRAME.registerComponent(
@@ -294,7 +299,7 @@
 
                     velocidad: {
                         type: 'number',
-                        default: 2.0
+                        default: 2
                     },
 
 
@@ -386,10 +391,9 @@
                     deltaTime
                 ) {
 
+
                     if (!deltaTime) {
-
                         return;
-
                     }
 
 
@@ -397,7 +401,11 @@
                         this.el.sceneEl;
 
 
-                    // No interferir con seguimiento XR.
+
+                    // =========================================
+                    // EN AR / VR:
+                    // NO INTERFERIR CON EL TRACKING
+                    // =========================================
 
                     if (
 
@@ -411,12 +419,14 @@
                     }
 
 
+
                     const dt =
                         deltaTime / 1000;
 
 
                     const rig =
                         this.el.object3D;
+
 
 
                     const quaternion =
@@ -569,8 +579,7 @@
 
                         rig.position.y +=
 
-                            this.data
-                                .velocidadVertical *
+                            this.data.velocidadVertical *
                             dt;
 
                     }
@@ -587,8 +596,7 @@
 
                         rig.position.y -=
 
-                            this.data
-                                .velocidadVertical *
+                            this.data.velocidadVertical *
                             dt;
 
                     }
@@ -600,11 +608,9 @@
 
                             rig.position.y,
 
-                            this.data
-                                .alturaMinima,
+                            this.data.alturaMinima,
 
-                            this.data
-                                .alturaMaxima
+                            this.data.alturaMaxima
 
                         );
 
@@ -616,16 +622,21 @@
 
 
         // =====================================================
-        // AR CON HIT TEST + ANCLA ESPACIAL
+        // AR ESTABLE
         //
-        // AQUÍ ESTÁ EL CAMBIO IMPORTANTE.
+        // SOLO HIT TEST.
+        // NO USAMOS XRAnchor.
+        //
+        // El punto se guarda UNA SOLA VEZ dentro
+        // del XRReferenceSpace "local".
         // =====================================================
 
         AFRAME.registerComponent(
-            'ar-anclado',
+            'ar-fijo-estable',
             {
 
                 init: function () {
+
 
                     this.escena =
                         this.el;
@@ -661,12 +672,6 @@
                         );
 
 
-                    this.estadoAncla =
-                        document.getElementById(
-                            'estadoAncla'
-                        );
-
-
                     this.session =
                         null;
 
@@ -683,11 +688,7 @@
                         null;
 
 
-                    this.ultimoHit =
-                        null;
-
-
-                    this.anchor =
+                    this.ultimaPosicion =
                         null;
 
 
@@ -695,40 +696,17 @@
                         false;
 
 
-                    this.posicionRigPC =
+                    this.posicionPC =
                         new THREE.Vector3();
 
 
 
                     // =================================================
-                    // ENTRAR EN XR
+                    // FUNCIÓN DE SELECCIÓN
                     // =================================================
 
-                    this.escena.addEventListener(
-                        'enter-vr',
-                        async () => {
-
-
-                            // Guardar posición del PC.
-
-                            this.posicionRigPC.copy(
-                                this.rig.object3D.position
-                            );
-
-
-                            /*
-                            En XR no queremos conservar
-                            la altura artificial del PC.
-
-                            El dispositivo XR define
-                            la posición del usuario.
-                            */
-
-                            this.rig.object3D.position.set(
-                                0,
-                                0,
-                                0
-                            );
+                    this.seleccionar =
+                        () => {
 
 
                             if (
@@ -740,147 +718,8 @@
                             }
 
 
-                            this.colocado =
-                                false;
-
-
-                            this.anchor =
-                                null;
-
-
-                            this.modelo.setAttribute(
-                                'visible',
-                                false
-                            );
-
-
-                            this.reticulo.setAttribute(
-                                'visible',
-                                false
-                            );
-
-
-                            // Panel compacto.
-
-                            this.panel.style.display =
-                                'block';
-
-
-                            this.panel.style.opacity =
-                                '1';
-
-
-                            this.panel.classList.add(
-                                'modoAR'
-                            );
-
-
-                            this.estadoAncla.innerHTML =
-                                "<span class='esperando'>" +
-                                "Anclaje AR: preparando..." +
-                                "</span>";
-
-
-                            this.texto.innerHTML =
-                                "Mueve lentamente el teléfono.<br>" +
-                                "Apunta hacia una mesa o el piso.";
-
-
-
-                            try {
-
-
-                                this.session =
-                                    this.escena.renderer.xr
-                                        .getSession();
-
-
-                                // =====================================
-                                // ESPACIO LOCAL
-                                // =====================================
-
-                                this.referenceSpace =
-                                    await this.session
-                                        .requestReferenceSpace(
-                                            'local'
-                                        );
-
-
-                                // =====================================
-                                // ESPACIO DEL OBSERVADOR
-                                // =====================================
-
-                                this.viewerSpace =
-                                    await this.session
-                                        .requestReferenceSpace(
-                                            'viewer'
-                                        );
-
-
-                                // =====================================
-                                // HIT TEST
-                                // =====================================
-
-                                this.hitTestSource =
-                                    await this.session
-                                        .requestHitTestSource(
-                                            {
-                                                space:
-                                                    this.viewerSpace
-                                            }
-                                        );
-
-
-                                this.estadoAncla.innerHTML =
-                                    "<span class='ok'>" +
-                                    "Hit Test: activo" +
-                                    "</span>";
-
-
-                                // =====================================
-                                // TOQUE EN PANTALLA
-                                // =====================================
-
-                                this.session.addEventListener(
-                                    'select',
-                                    this.seleccionar
-                                );
-
-
-                            }
-
-                            catch (error) {
-
-
-                                console.error(
-                                    'Error preparando AR:',
-                                    error
-                                );
-
-
-                                this.estadoAncla.innerHTML =
-                                    "<span class='error'>" +
-                                    "Error iniciando Hit Test" +
-                                    "</span>";
-
-                            }
-
-                        }
-                    );
-
-
-
-                    // =================================================
-                    // FUNCIÓN DE SELECCIÓN
-                    // =================================================
-
-                    this.seleccionar =
-                        async () => {
-
-
                             if (
-                                this.colocado ||
-                                !this.ultimoHit
+                                this.colocado
                             ) {
 
                                 return;
@@ -888,70 +727,31 @@
                             }
 
 
-                            this.colocado =
-                                true;
-
-
-
-                            // =========================================
-                            // INTENTAR CREAR XRAnchor REAL
-                            // =========================================
-
                             if (
-
-                                typeof this.ultimoHit
-                                    .createAnchor ===
-                                'function'
-
+                                !this.ultimaPosicion
                             ) {
 
-
-                                try {
-
-
-                                    this.anchor =
-                                        await this.ultimoHit
-                                            .createAnchor();
-
-
-                                    this.estadoAncla.innerHTML =
-                                        "<span class='ok'>" +
-                                        "Ancla espacial: activa" +
-                                        "</span>";
-
-
-                                }
-
-                                catch (error) {
-
-
-                                    console.warn(
-                                        'XRAnchor no disponible. ' +
-                                        'Se utilizará referencia local.',
-                                        error
-                                    );
-
-
-                                    this.anchor =
-                                        null;
-
-
-                                    this.estadoAncla.innerHTML =
-                                        "<span class='esperando'>" +
-                                        "Anclaje: referencia local" +
-                                        "</span>";
-
-                                }
+                                return;
 
                             }
 
 
 
-                            /*
-                            Si no hay soporte de anchors,
-                            dejamos la última pose del
-                            Hit Test en el espacio local.
-                            */
+                            // =========================================
+                            // GUARDAR ESA POSICIÓN UNA SOLA VEZ
+                            // =========================================
+
+                            this.modelo.object3D.position.set(
+
+                                this.ultimaPosicion.x,
+
+                                this.ultimaPosicion.y,
+
+                                this.ultimaPosicion.z
+
+                            );
+
+
 
                             this.modelo.setAttribute(
                                 'visible',
@@ -965,9 +765,18 @@
                             );
 
 
+                            // =========================================
+                            // BLOQUEAR
+                            // =========================================
+
+                            this.colocado =
+                                true;
+
+
+
                             this.texto.innerHTML =
                                 "<span class='ok'>" +
-                                "Modelo fijado." +
+                                "Modelo colocado y fijado." +
                                 "</span>";
 
 
@@ -981,10 +790,12 @@
 
 
                                     if (
+
                                         this.colocado &&
                                         this.escena.is(
                                             'ar-mode'
                                         )
+
                                     ) {
 
 
@@ -997,7 +808,10 @@
 
 
                                                 if (
-                                                    this.colocado
+                                                    this.colocado &&
+                                                    this.escena.is(
+                                                        'ar-mode'
+                                                    )
                                                 ) {
 
                                                     this.panel.style.display =
@@ -1014,10 +828,201 @@
 
                                 },
 
-                                800
+                                700
                             );
 
                         };
+
+
+
+                    // =================================================
+                    // ENTRAR EN XR
+                    // =================================================
+
+                    this.escena.addEventListener(
+                        'enter-vr',
+                        async () => {
+
+
+                            // Guardar posición usada en PC.
+
+                            this.posicionPC.copy(
+                                this.rig.object3D.position
+                            );
+
+
+                            // =========================================
+                            // MUY IMPORTANTE:
+                            //
+                            // En XR el dispositivo controla la pose.
+                            //
+                            // No conservar el 1.6 m artificial del PC.
+                            // =========================================
+
+                            this.rig.object3D.position.set(
+                                0,
+                                0,
+                                0
+                            );
+
+
+
+                            if (
+                                !this.escena.is('ar-mode')
+                            ) {
+
+                                return;
+
+                            }
+
+
+
+                            this.colocado =
+                                false;
+
+
+                            this.ultimaPosicion =
+                                null;
+
+
+
+                            // Modelo oculto mientras buscamos.
+
+                            this.modelo.setAttribute(
+                                'visible',
+                                false
+                            );
+
+
+                            this.reticulo.setAttribute(
+                                'visible',
+                                false
+                            );
+
+
+
+                            // =========================================
+                            // PANEL AR COMPACTO
+                            // =========================================
+
+                            this.panel.style.display =
+                                'block';
+
+
+                            this.panel.style.opacity =
+                                '1';
+
+
+                            this.panel.classList.add(
+                                'modoAR'
+                            );
+
+
+                            this.texto.innerHTML =
+                                "Buscando superficie..." +
+                                "<br>" +
+                                "Mueve lentamente el teléfono.";
+
+
+
+                            try {
+
+
+                                // =====================================
+                                // SESIÓN WEBXR
+                                // =====================================
+
+                                this.session =
+                                    this.escena.renderer.xr
+                                        .getSession();
+
+
+
+                                if (
+                                    !this.session
+                                ) {
+
+                                    throw new Error(
+                                        'No existe sesión XR.'
+                                    );
+
+                                }
+
+
+
+                                // =====================================
+                                // ESPACIO LOCAL
+                                //
+                                // ESTE ES NUESTRO MUNDO ESTABLE
+                                // =====================================
+
+                                this.referenceSpace =
+                                    await this.session
+                                        .requestReferenceSpace(
+                                            'local'
+                                        );
+
+
+
+                                // =====================================
+                                // ESPACIO DE LA CÁMARA
+                                // =====================================
+
+                                this.viewerSpace =
+                                    await this.session
+                                        .requestReferenceSpace(
+                                            'viewer'
+                                        );
+
+
+
+                                // =====================================
+                                // FUENTE HIT TEST
+                                // =====================================
+
+                                this.hitTestSource =
+                                    await this.session
+                                        .requestHitTestSource(
+                                            {
+
+                                                space:
+                                                    this.viewerSpace
+
+                                            }
+                                        );
+
+
+
+                                // =====================================
+                                // TOQUE
+                                // =====================================
+
+                                this.session.addEventListener(
+                                    'select',
+                                    this.seleccionar
+                                );
+
+
+                            }
+
+                            catch (error) {
+
+
+                                console.error(
+                                    'Error preparando Hit Test:',
+                                    error
+                                );
+
+
+                                this.texto.innerHTML =
+                                    "<span class='error'>" +
+                                    "No se pudo iniciar Hit Test." +
+                                    "</span>";
+
+                            }
+
+                        }
+                    );
 
 
 
@@ -1034,7 +1039,6 @@
                                 this.session
                             ) {
 
-
                                 this.session.removeEventListener(
                                     'select',
                                     this.seleccionar
@@ -1047,19 +1051,9 @@
                                 this.hitTestSource
                             ) {
 
-                                this.hitTestSource.cancel();
-
-                            }
-
-
-                            if (
-                                this.anchor
-                            ) {
-
-
                                 try {
 
-                                    this.anchor.delete();
+                                    this.hitTestSource.cancel();
 
                                 }
 
@@ -1087,11 +1081,7 @@
                                 null;
 
 
-                            this.ultimoHit =
-                                null;
-
-
-                            this.anchor =
+                            this.ultimaPosicion =
                                 null;
 
 
@@ -1101,11 +1091,11 @@
 
 
                             // =========================================
-                            // RESTAURAR RIG DEL PC
+                            // RESTAURAR POSICIÓN PC
                             // =========================================
 
                             this.rig.object3D.position.copy(
-                                this.posicionRigPC
+                                this.posicionPC
                             );
 
 
@@ -1132,6 +1122,12 @@
                             // RESTAURAR INTERFAZ
                             // =========================================
 
+                            this.reticulo.setAttribute(
+                                'visible',
+                                false
+                            );
+
+
                             this.panel.style.display =
                                 'block';
 
@@ -1145,13 +1141,9 @@
                             );
 
 
-                            this.estadoAncla.innerHTML =
-                                "Anclaje AR: esperando sesión";
-
-
                             this.texto.innerHTML =
-                                "En AR podrás fijar el modelo " +
-                                "sobre una superficie real.";
+                                "En modo AR podrás colocar " +
+                                "el modelo sobre una superficie real.";
 
                         }
                     );
@@ -1176,12 +1168,27 @@
                     }
 
 
-                    const frame =
-                        this.escena.frame;
+
+                    // =================================================
+                    // UNA VEZ COLOCADO:
+                    //
+                    // NO TOCAMOS MÁS LA POSICIÓN.
+                    //
+                    // ESTE ES EL CAMBIO CLAVE.
+                    // =================================================
+
+                    if (
+                        this.colocado
+                    ) {
+
+                        return;
+
+                    }
+
 
 
                     if (
-                        !frame ||
+                        !this.hitTestSource ||
                         !this.referenceSpace
                     ) {
 
@@ -1191,48 +1198,31 @@
 
 
 
-                    // =================================================
-                    // SI YA EXISTE UN ANCLA
-                    // =================================================
-
-                    if (
-                        this.anchor
-                    ) {
+                    const frame =
+                        this.escena.frame;
 
 
-                        const pose =
-                            frame.getPose(
+                    if (!frame) {
 
-                                this.anchor.anchorSpace,
+                        return;
 
-                                this.referenceSpace
+                    }
 
+
+
+                    let resultados;
+
+
+                    try {
+
+                        resultados =
+                            frame.getHitTestResults(
+                                this.hitTestSource
                             );
 
+                    }
 
-                        if (pose) {
-
-
-                            /*
-                            El XRAnchor nos da la posición
-                            actualizada del MISMO punto real.
-
-                            Esto es lo que evita que el CAD
-                            siga a la cámara.
-                            */
-
-                            this.modelo.object3D.position.set(
-
-                                pose.transform.position.x,
-
-                                pose.transform.position.y,
-
-                                pose.transform.position.z
-
-                            );
-
-                        }
-
+                    catch (error) {
 
                         return;
 
@@ -1240,50 +1230,8 @@
 
 
 
-                    // =================================================
-                    // SI EL OBJETO YA FUE COLOCADO SIN XRAnchor
-                    // =================================================
-
                     if (
-                        this.colocado
-                    ) {
-
-                        /*
-                        No hacemos NADA.
-
-                        Esta posición queda almacenada en
-                        el espacio de referencia local.
-
-                        No seguimos moviendo el objeto
-                        con el Hit Test.
-                        */
-
-                        return;
-
-                    }
-
-
-
-                    // =================================================
-                    // HIT TEST ANTES DE COLOCAR
-                    // =================================================
-
-                    if (
-                        !this.hitTestSource
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    const resultados =
-                        frame.getHitTestResults(
-                            this.hitTestSource
-                        );
-
-
-                    if (
+                        !resultados ||
                         resultados.length === 0
                     ) {
 
@@ -1300,14 +1248,15 @@
 
 
 
-                    this.ultimoHit =
+                    const resultado =
                         resultados[0];
 
 
                     const pose =
-                        this.ultimoHit.getPose(
+                        resultado.getPose(
                             this.referenceSpace
                         );
+
 
 
                     if (!pose) {
@@ -1319,16 +1268,41 @@
 
 
                     // =================================================
-                    // POSICIÓN DEL RETÍCULO
+                    // GUARDAR POSICIÓN ACTUAL
+                    // =================================================
+
+                    this.ultimaPosicion =
+                        {
+
+                            x:
+                                pose.transform
+                                    .position.x,
+
+                            y:
+                                pose.transform
+                                    .position.y,
+
+                            z:
+                                pose.transform
+                                    .position.z
+
+                        };
+
+
+
+                    // =================================================
+                    // MOVER SOLAMENTE EL RETÍCULO
+                    //
+                    // EL ROBOT SIGUE OCULTO.
                     // =================================================
 
                     this.reticulo.object3D.position.set(
 
-                        pose.transform.position.x,
+                        this.ultimaPosicion.x,
 
-                        pose.transform.position.y,
+                        this.ultimaPosicion.y,
 
-                        pose.transform.position.z
+                        this.ultimaPosicion.z
 
                     );
 
@@ -1340,26 +1314,12 @@
 
 
 
-                    // =================================================
-                    // PREVISUALIZACIÓN DEL MODELO
-                    // =================================================
-
-                    this.modelo.object3D.position.set(
-
-                        pose.transform.position.x,
-
-                        pose.transform.position.y,
-
-                        pose.transform.position.z
-
-                    );
-
-
                     this.texto.innerHTML =
                         "<span class='ok'>" +
                         "Superficie detectada." +
-                        "</span><br>" +
-                        "Toca la pantalla para fijar el modelo.";
+                        "</span>" +
+                        "<br>" +
+                        "Toca la pantalla para colocar el modelo.";
 
                 }
 
@@ -1394,9 +1354,7 @@
 
 
 
-            if (
-                !navigator.xr
-            ) {
+            if (!navigator.xr) {
 
 
                 webxr.innerHTML =
@@ -1434,6 +1392,10 @@
 
 
 
+            // =================================================
+            // VR
+            // =================================================
+
             try {
 
 
@@ -1468,13 +1430,16 @@
                 vr.innerHTML =
                     'VR: error';
 
-
                 vr.className =
                     'error';
 
             }
 
 
+
+            // =================================================
+            // AR
+            // =================================================
 
             try {
 
@@ -1509,7 +1474,6 @@
 
                 ar.innerHTML =
                     'AR: error';
-
 
                 ar.className =
                     'error';
@@ -1586,13 +1550,6 @@
     </div>
 
 
-    <div id="estadoAncla">
-
-        Anclaje AR: esperando sesión
-
-    </div>
-
-
 
     <div id="controlesPC">
 
@@ -1624,7 +1581,7 @@
 
     <div id="instruccionAR">
 
-        En modo AR podrás fijar
+        En modo AR podrás colocar
         el modelo sobre una superficie real.
 
     </div>
@@ -1647,14 +1604,13 @@
 
 
     webxr="
-        requiredFeatures: hit-test;
-        optionalFeatures: anchors, dom-overlay;
+        optionalFeatures: hit-test, dom-overlay;
         referenceSpaceType: local;
         overlayElement: #overlay;
     "
 
 
-    ar-anclado
+    ar-fijo-estable
 
 
     renderer="
@@ -1767,7 +1723,7 @@
 
 
     <!-- =====================================================
-         MODELO
+         MODELO CAD
     ====================================================== -->
 
     <a-entity
@@ -1857,7 +1813,7 @@
         position="0 1.6 0"
 
         movimiento-pc="
-            velocidad: 2.0;
+            velocidad: 2;
             velocidadVertical: 1.5;
             alturaMinima: 0.25;
             alturaMaxima: 5;
