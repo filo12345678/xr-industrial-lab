@@ -7,14 +7,25 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+        content="width=device-width, initial-scale=1.0,
+                 maximum-scale=1.0, user-scalable=no"
     >
 
-    <title>Laboratorio XR Multiplataforma</title>
+    <title>Laboratorio XR - A-Frame</title>
 
-    <!-- A-FRAME -->
-    <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
 
+    <!-- =====================================================
+         A-FRAME
+    ====================================================== -->
+
+    <script
+        src="https://aframe.io/releases/1.8.0/aframe.min.js">
+    </script>
+
+
+    <!-- =====================================================
+         ESTILO DEL PANEL
+    ====================================================== -->
 
     <style>
 
@@ -25,18 +36,18 @@
         }
 
 
-        #infoXR {
+        #overlay {
 
             position: fixed;
 
             top: 15px;
             left: 15px;
 
-            width: 270px;
+            width: 285px;
 
             padding: 14px;
 
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.72);
 
             color: white;
 
@@ -44,11 +55,9 @@
 
             z-index: 9999;
 
-            font-size: 14px;
+            font-size: 13px;
 
             line-height: 1.5;
-
-            pointer-events: none;
         }
 
 
@@ -64,24 +73,30 @@
         }
 
 
-        .compatible {
-
+        .ok {
             color: #00ff88;
-
         }
 
 
-        .no-compatible {
-
+        .error {
             color: #ff5555;
-
         }
 
 
         .esperando {
-
             color: #ffcc00;
+        }
 
+
+        #instruccionAR {
+
+            margin-top: 10px;
+
+            padding-top: 10px;
+
+            border-top: 1px solid #777;
+
+            color: #ffffff;
         }
 
     </style>
@@ -90,30 +105,55 @@
     <script>
 
         // =====================================================
-        // OCULTAR ELEMENTOS CUANDO ESTEMOS EN AR
+        // OCULTAR OBJETOS AL ENTRAR EN AR
+        //
+        // En escritorio los objetos se ven normalmente.
+        // En AR se ocultan hasta que el usuario encuentre
+        // una superficie y toque la pantalla.
         // =====================================================
 
         AFRAME.registerComponent(
-            'hide-in-ar-mode',
+            'preparar-ar',
             {
 
                 init: function () {
 
-                    const elemento = this.el;
+                    const objeto =
+                        this.el;
 
-                    const escena = elemento.sceneEl;
+                    const escena =
+                        objeto.sceneEl;
 
 
                     escena.addEventListener(
                         'enter-vr',
                         function () {
 
-                            if (escena.is('ar-mode')) {
+                            if (
+                                escena.is('ar-mode')
+                            ) {
 
-                                elemento.setAttribute(
+                                objeto.setAttribute(
                                     'visible',
                                     false
                                 );
+
+
+                                const texto =
+                                    document.getElementById(
+                                        'instruccionAR'
+                                    );
+
+
+                                if (texto) {
+
+                                    texto.innerHTML =
+                                        "Mueve lentamente el teléfono " +
+                                        "para detectar una superficie.<br>" +
+                                        "Cuando aparezca el retículo, " +
+                                        "<b>toca la pantalla</b>.";
+
+                                }
 
                             }
 
@@ -125,7 +165,7 @@
                         'exit-vr',
                         function () {
 
-                            elemento.setAttribute(
+                            objeto.setAttribute(
                                 'visible',
                                 true
                             );
@@ -140,74 +180,139 @@
 
 
         // =====================================================
+        // MENSAJES DEL HIT TEST
+        // =====================================================
+
+        AFRAME.registerComponent(
+            'estado-hit-test',
+            {
+
+                init: function () {
+
+                    const escena =
+                        this.el;
+
+
+                    escena.addEventListener(
+                        'ar-hit-test-start',
+                        function () {
+
+                            console.log(
+                                "Hit Test iniciado"
+                            );
+
+                        }
+                    );
+
+
+                    escena.addEventListener(
+                        'ar-hit-test-achieved',
+                        function () {
+
+                            console.log(
+                                "Superficie detectada"
+                            );
+
+
+                            const texto =
+                                document.getElementById(
+                                    'instruccionAR'
+                                );
+
+
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Superficie detectada." +
+                                    "</span><br>" +
+                                    "Toca la pantalla para " +
+                                    "colocar el objeto.";
+
+                            }
+
+                        }
+                    );
+
+
+                    escena.addEventListener(
+                        'ar-hit-test-select',
+                        function () {
+
+                            console.log(
+                                "Objeto colocado"
+                            );
+
+
+                            const texto =
+                                document.getElementById(
+                                    'instruccionAR'
+                                );
+
+
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Objeto colocado correctamente." +
+                                    "</span><br>" +
+                                    "Puedes apuntar a otra superficie " +
+                                    "y tocar nuevamente para moverlo.";
+
+                            }
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+
+        // =====================================================
         // DETECCIÓN DE COMPATIBILIDAD WEBXR
         // =====================================================
 
-        async function detectarWebXR() {
+        async function detectarCompatibilidadXR() {
 
-            const webxr =
-                document.getElementById("webxr");
+            const estadoWebXR =
+                document.getElementById(
+                    "estadoWebXR"
+                );
 
-            const vr =
-                document.getElementById("vr");
+            const estadoVR =
+                document.getElementById(
+                    "estadoVR"
+                );
 
-            const ar =
-                document.getElementById("ar");
+            const estadoAR =
+                document.getElementById(
+                    "estadoAR"
+                );
 
-            const https =
-                document.getElementById("https");
-
-
-            // -------------------------------------------------
-            // HTTPS
-            // -------------------------------------------------
-
-            if (window.isSecureContext) {
-
-                https.innerHTML =
-                    "HTTPS: compatible";
-
-                https.className =
-                    "compatible";
-
-            }
-
-            else {
-
-                https.innerHTML =
-                    "HTTPS: no disponible";
-
-                https.className =
-                    "no-compatible";
-
-            }
-
-
-            // -------------------------------------------------
-            // WEBXR
-            // -------------------------------------------------
 
             if (!navigator.xr) {
 
-                webxr.innerHTML =
+                estadoWebXR.innerHTML =
                     "WebXR: no disponible";
 
-                webxr.className =
-                    "no-compatible";
+                estadoWebXR.className =
+                    "error";
 
 
-                vr.innerHTML =
-                    "VR inmersiva: no disponible";
+                estadoVR.innerHTML =
+                    "VR: no disponible";
 
-                vr.className =
-                    "no-compatible";
+                estadoVR.className =
+                    "error";
 
 
-                ar.innerHTML =
-                    "AR inmersiva: no disponible";
+                estadoAR.innerHTML =
+                    "AR: no disponible";
 
-                ar.className =
-                    "no-compatible";
+                estadoAR.className =
+                    "error";
 
 
                 return;
@@ -215,11 +320,11 @@
             }
 
 
-            webxr.innerHTML =
+            estadoWebXR.innerHTML =
                 "WebXR: disponible";
 
-            webxr.className =
-                "compatible";
+            estadoWebXR.className =
+                "ok";
 
 
             // -------------------------------------------------
@@ -229,40 +334,36 @@
             try {
 
                 const soportaVR =
-                    await navigator.xr.isSessionSupported(
-                        "immersive-vr"
-                    );
+                    await navigator.xr
+                        .isSessionSupported(
+                            "immersive-vr"
+                        );
 
 
-                if (soportaVR) {
+                estadoVR.innerHTML =
+                    soportaVR
+                    ?
+                    "VR: compatible"
+                    :
+                    "VR: no compatible";
 
-                    vr.innerHTML =
-                        "VR inmersiva: compatible";
 
-                    vr.className =
-                        "compatible";
-
-                }
-
-                else {
-
-                    vr.innerHTML =
-                        "VR inmersiva: no compatible";
-
-                    vr.className =
-                        "no-compatible";
-
-                }
+                estadoVR.className =
+                    soportaVR
+                    ?
+                    "ok"
+                    :
+                    "error";
 
             }
 
             catch (error) {
 
-                vr.innerHTML =
-                    "VR inmersiva: error";
+                estadoVR.innerHTML =
+                    "VR: error";
 
-                vr.className =
-                    "no-compatible";
+                estadoVR.className =
+                    "error";
 
             }
 
@@ -274,40 +375,36 @@
             try {
 
                 const soportaAR =
-                    await navigator.xr.isSessionSupported(
-                        "immersive-ar"
-                    );
+                    await navigator.xr
+                        .isSessionSupported(
+                            "immersive-ar"
+                        );
 
 
-                if (soportaAR) {
+                estadoAR.innerHTML =
+                    soportaAR
+                    ?
+                    "AR: compatible"
+                    :
+                    "AR: no compatible";
 
-                    ar.innerHTML =
-                        "AR inmersiva: compatible";
 
-                    ar.className =
-                        "compatible";
-
-                }
-
-                else {
-
-                    ar.innerHTML =
-                        "AR inmersiva: no compatible";
-
-                    ar.className =
-                        "no-compatible";
-
-                }
+                estadoAR.className =
+                    soportaAR
+                    ?
+                    "ok"
+                    :
+                    "error";
 
             }
 
             catch (error) {
 
-                ar.innerHTML =
-                    "AR inmersiva: error";
+                estadoAR.innerHTML =
+                    "AR: error";
 
-                ar.className =
-                    "no-compatible";
+                estadoAR.className =
+                    "error";
 
             }
 
@@ -316,7 +413,7 @@
 
         window.addEventListener(
             "load",
-            detectarWebXR
+            detectarCompatibilidadXR
         );
 
     </script>
@@ -331,40 +428,45 @@
      PANEL DE INFORMACIÓN
 ========================================================= -->
 
-<div id="infoXR">
+<div id="overlay">
 
     <div id="titulo">
         LABORATORIO XR
     </div>
 
-    <div>
-        Compatibilidad del dispositivo
-    </div>
-
-    <br>
 
     <div
-        id="https"
+        id="estadoWebXR"
         class="esperando">
-        HTTPS: comprobando...
-    </div>
 
-    <div
-        id="webxr"
-        class="esperando">
         WebXR: comprobando...
+
     </div>
 
-    <div
-        id="vr"
-        class="esperando">
-        VR inmersiva: comprobando...
-    </div>
 
     <div
-        id="ar"
+        id="estadoVR"
         class="esperando">
-        AR inmersiva: comprobando...
+
+        VR: comprobando...
+
+    </div>
+
+
+    <div
+        id="estadoAR"
+        class="esperando">
+
+        AR: comprobando...
+
+    </div>
+
+
+    <div id="instruccionAR">
+
+        En modo AR podrás colocar los objetos
+        sobre una superficie real.
+
     </div>
 
 </div>
@@ -372,21 +474,37 @@
 
 
 <!-- =========================================================
-     ESCENA A-FRAME
+     ESCENA
 ========================================================= -->
 
 <a-scene
 
-    xr-mode-ui="XRMode: xr"
-
-    background="
-        color: #ECECEC;
-        transparent: true
+    xr-mode-ui="
+        XRMode: xr
     "
+
+    webxr="
+        referenceSpaceType: local;
+        optionalFeatures: hit-test,dom-overlay;
+        overlayElement: #overlay;
+    "
+
+    ar-hit-test="
+        target: #objetoXR;
+        type: footprint;
+    "
+
+    estado-hit-test
 
     renderer="
         colorManagement: true;
-        physicallyCorrectLights: true
+        physicallyCorrectLights: true;
+        alpha: true;
+    "
+
+    background="
+        color: #ECECEC;
+        transparent: true;
     "
 >
 
@@ -401,7 +519,7 @@
 
         color="#FFFFFF"
 
-        intensity="0.8">
+        intensity="0.9">
 
     </a-light>
 
@@ -412,92 +530,136 @@
 
         color="#FFFFFF"
 
-        intensity="0.7"
+        intensity="0.8"
 
-        position="-1 3 2">
+        position="-2 4 2">
 
     </a-light>
 
 
 
     <!-- =====================================================
-         CUBO
+         GRUPO DE OBJETOS
+         
+         ESTE ES EL ELEMENTO QUE SE COLOCARÁ SOBRE
+         LA SUPERFICIE DETECTADA.
     ====================================================== -->
 
-    <a-box
+    <a-entity
 
-        position="-1 0.5 -3"
+        id="objetoXR"
 
-        rotation="0 45 0"
+        preparar-ar
 
-        width="1"
+        position="0 0 -3"
 
-        height="1"
+        scale="0.5 0.5 0.5"
+    >
 
-        depth="1"
 
-        color="#4CC3D9"
+        <!-- =================================================
+             BASE
+        ================================================== -->
 
-        shadow>
+        <a-box
 
-    </a-box>
+            position="0 0.10 0"
+
+            width="4"
+
+            height="0.20"
+
+            depth="2.5"
+
+            color="#555555"
+
+            shadow>
+
+        </a-box>
+
+
+
+        <!-- =================================================
+             CUBO
+        ================================================== -->
+
+        <a-box
+
+            position="-1 0.7 0"
+
+            rotation="0 45 0"
+
+            width="1"
+
+            height="1"
+
+            depth="1"
+
+            color="#4CC3D9"
+
+            shadow>
+
+        </a-box>
+
+
+
+        <!-- =================================================
+             ESFERA
+        ================================================== -->
+
+        <a-sphere
+
+            position="0.5 0.9 0"
+
+            radius="0.65"
+
+            color="#EF2D5E"
+
+            shadow>
+
+        </a-sphere>
+
+
+
+        <!-- =================================================
+             CILINDRO
+        ================================================== -->
+
+        <a-cylinder
+
+            position="1.5 0.75 0"
+
+            radius="0.45"
+
+            height="1.3"
+
+            color="#FFC65D"
+
+            shadow>
+
+        </a-cylinder>
+
+
+    </a-entity>
 
 
 
     <!-- =====================================================
-         ESFERA
-    ====================================================== -->
+         PISO PARA MODO NORMAL / VR
 
-    <a-sphere
-
-        position="0.8 1.25 -4"
-
-        radius="1"
-
-        color="#EF2D5E"
-
-        shadow>
-
-    </a-sphere>
-
-
-
-    <!-- =====================================================
-         CILINDRO
-    ====================================================== -->
-
-    <a-cylinder
-
-        position="-2.2 0.75 -4"
-
-        radius="0.5"
-
-        height="1.5"
-
-        color="#FFC65D"
-
-        shadow>
-
-    </a-cylinder>
-
-
-
-    <!-- =====================================================
-         PISO
-         Se oculta automáticamente cuando entramos en AR.
+         Se mantiene como referencia visual cuando no estamos
+         usando AR.
     ====================================================== -->
 
     <a-plane
-
-        hide-in-ar-mode
 
         position="0 0 -4"
 
         rotation="-90 0 0"
 
-        width="10"
+        width="12"
 
-        height="10"
+        height="12"
 
         color="#7BC8A4"
 
@@ -509,12 +671,9 @@
 
     <!-- =====================================================
          CIELO
-         También se oculta en AR para poder ver el mundo real.
     ====================================================== -->
 
     <a-sky
-
-        hide-in-ar-mode
 
         color="#ECECEC">
 
@@ -527,7 +686,6 @@
     ====================================================== -->
 
     <a-entity
-
         position="0 1.6 0">
 
         <a-camera
