@@ -13,11 +13,11 @@
                  user-scalable=no"
     >
 
-    <title>Modelo CAD Industrial XR</title>
+    <title>Laboratorio XR - Celda Industrial</title>
 
 
     <!-- =====================================================
-         A-FRAME
+         A-FRAME 1.8.0
     ====================================================== -->
 
     <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
@@ -25,34 +25,23 @@
 
     <style>
 
-        html,
         body {
-
             margin: 0;
-
-            width: 100%;
-
-            height: 100%;
-
             overflow: hidden;
-
             font-family: Arial, sans-serif;
-
         }
 
 
-        #panel {
+        #overlay {
 
             position: fixed;
 
             top: 15px;
             left: 15px;
 
-            z-index: 9999;
+            width: 300px;
 
-            width: 310px;
-
-            padding: 12px 15px;
+            padding: 14px;
 
             background: rgba(0, 0, 0, 0.72);
 
@@ -60,46 +49,50 @@
 
             border-radius: 10px;
 
+            z-index: 9999;
+
             font-size: 13px;
 
             line-height: 1.5;
-
-            pointer-events: none;
-
         }
 
 
         #titulo {
 
-            color: #00ff99;
-
-            font-weight: bold;
+            color: #00ff88;
 
             font-size: 17px;
 
+            font-weight: bold;
+
             margin-bottom: 8px;
-
         }
 
 
-        .verde {
-
-            color: #00ff99;
-
+        .ok {
+            color: #00ff88;
         }
 
 
-        .amarillo {
-
-            color: #ffd54f;
-
+        .error {
+            color: #ff5555;
         }
 
 
-        .rojo {
+        .esperando {
+            color: #ffcc00;
+        }
 
-            color: #ff5252;
 
+        #instruccionAR {
+
+            margin-top: 10px;
+
+            padding-top: 10px;
+
+            border-top: 1px solid #777;
+
+            color: white;
         }
 
 
@@ -107,10 +100,19 @@
 
             margin-top: 10px;
 
-            padding-top: 8px;
+            padding-top: 10px;
 
-            border-top: 1px solid rgba(255,255,255,0.35);
+            border-top: 1px solid #777;
+        }
 
+
+        #controles {
+
+            margin-top: 10px;
+
+            padding-top: 10px;
+
+            border-top: 1px solid #777;
         }
 
     </style>
@@ -121,64 +123,122 @@
 
 
         // =====================================================
-        // =====================================================
-        //
-        // MOVIMIENTO EN PC
-        //
-        // =====================================================
-        //
-        // W = adelante
-        // S = atrás
-        // A = izquierda
-        // D = derecha
-        //
-        // E = subir
-        // Q = bajar
-        //
-        // Mouse = mirar
-        //
-        // Se desactiva durante AR y VR.
+        // ESTADO DEL HIT TEST
         // =====================================================
 
         AFRAME.registerComponent(
-            'movimiento-pc',
+            'estado-hit-test',
+            {
+
+                init: function () {
+
+                    const escena = this.el;
+
+
+                    escena.addEventListener(
+                        'ar-hit-test-start',
+                        function () {
+
+                            const texto =
+                                document.getElementById(
+                                    'instruccionAR'
+                                );
+
+
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "Buscando superficies..." +
+                                    "<br>" +
+                                    "Mueve lentamente el dispositivo.";
+
+                            }
+
+                        }
+                    );
+
+
+                    escena.addEventListener(
+                        'ar-hit-test-achieved',
+                        function () {
+
+                            const texto =
+                                document.getElementById(
+                                    'instruccionAR'
+                                );
+
+
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Superficie detectada." +
+                                    "</span>" +
+                                    "<br>" +
+                                    "Toca la pantalla para colocar " +
+                                    "la celda industrial.";
+
+                            }
+
+                        }
+                    );
+
+
+                    escena.addEventListener(
+                        'ar-hit-test-select',
+                        function () {
+
+                            const texto =
+                                document.getElementById(
+                                    'instruccionAR'
+                                );
+
+
+                            if (texto) {
+
+                                texto.innerHTML =
+                                    "<span class='ok'>" +
+                                    "Celda colocada correctamente." +
+                                    "</span>";
+
+                            }
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        // =====================================================
+        // MOVIMIENTO VERTICAL EN PC
+        //
+        // E = SUBIR
+        // Q = BAJAR
+        // =====================================================
+
+        AFRAME.registerComponent(
+            'movimiento-vertical',
             {
 
                 schema: {
 
                     velocidad: {
-
                         type: 'number',
-
-                        default: 2
-
-                    },
-
-
-                    velocidadVertical: {
-
-                        type: 'number',
-
                         default: 1.5
-
                     },
-
 
                     alturaMinima: {
-
                         type: 'number',
-
-                        default: 0.25
-
+                        default: 0.3
                     },
 
-
                     alturaMaxima: {
-
                         type: 'number',
-
-                        default: 5
-
+                        default: 4
                     }
 
                 },
@@ -186,58 +246,45 @@
 
                 init: function () {
 
-
                     this.teclas = {};
 
 
-                    this.camara =
-                        document.getElementById(
-                            'camara'
-                        );
-
-
-                    this.presionar =
+                    this.keyDown =
                         (evento) => {
 
-
-                            this.teclas[
-                                evento.code
-                            ] = true;
+                            this.teclas[evento.code] =
+                                true;
 
                         };
 
 
-                    this.soltar =
+                    this.keyUp =
                         (evento) => {
 
-
-                            this.teclas[
-                                evento.code
-                            ] = false;
+                            this.teclas[evento.code] =
+                                false;
 
                         };
 
 
                     window.addEventListener(
                         'keydown',
-                        this.presionar
+                        this.keyDown
                     );
 
 
                     window.addEventListener(
                         'keyup',
-                        this.soltar
+                        this.keyUp
                     );
 
                 },
-
 
 
                 tick: function (
                     tiempo,
                     delta
                 ) {
-
 
                     if (!delta) {
 
@@ -250,17 +297,13 @@
                         this.el.sceneEl;
 
 
-
                     // =========================================
-                    // NO INTERFERIR CON XR
+                    // NO INTERFERIR EN AR / VR
                     // =========================================
 
                     if (
-
-                        escena.is('ar-mode') ||
-
-                        escena.is('vr-mode')
-
+                        escena.is('vr-mode') ||
+                        escena.is('ar-mode')
                     ) {
 
                         return;
@@ -272,207 +315,42 @@
                         delta / 1000;
 
 
-                    const rig =
-                        this.el.object3D;
+                    const posicion =
+                        this.el.object3D.position;
 
-
-
-                    // =========================================
-                    // DIRECCIÓN SEGÚN CÁMARA
-                    // =========================================
-
-                    const quaternion =
-                        new THREE.Quaternion();
-
-
-                    this.camara.object3D
-                        .getWorldQuaternion(
-                            quaternion
-                        );
-
-
-                    const adelante =
-                        new THREE.Vector3(
-                            0,
-                            0,
-                            -1
-                        );
-
-
-                    adelante.applyQuaternion(
-                        quaternion
-                    );
-
-
-                    adelante.y = 0;
-
-
-                    if (
-                        adelante.lengthSq() > 0
-                    ) {
-
-                        adelante.normalize();
-
-                    }
-
-
-
-                    const derecha =
-                        new THREE.Vector3(
-                            1,
-                            0,
-                            0
-                        );
-
-
-                    derecha.applyQuaternion(
-                        quaternion
-                    );
-
-
-                    derecha.y = 0;
-
-
-                    if (
-                        derecha.lengthSq() > 0
-                    ) {
-
-                        derecha.normalize();
-
-                    }
-
-
-
-                    // =========================================
-                    // W
-                    // =========================================
-
-                    if (
-                        this.teclas['KeyW']
-                    ) {
-
-                        rig.position.addScaledVector(
-
-                            adelante,
-
-                            this.data.velocidad *
-                            dt
-
-                        );
-
-                    }
-
-
-
-                    // =========================================
-                    // S
-                    // =========================================
-
-                    if (
-                        this.teclas['KeyS']
-                    ) {
-
-                        rig.position.addScaledVector(
-
-                            adelante,
-
-                            -this.data.velocidad *
-                            dt
-
-                        );
-
-                    }
-
-
-
-                    // =========================================
-                    // A
-                    // =========================================
-
-                    if (
-                        this.teclas['KeyA']
-                    ) {
-
-                        rig.position.addScaledVector(
-
-                            derecha,
-
-                            -this.data.velocidad *
-                            dt
-
-                        );
-
-                    }
-
-
-
-                    // =========================================
-                    // D
-                    // =========================================
-
-                    if (
-                        this.teclas['KeyD']
-                    ) {
-
-                        rig.position.addScaledVector(
-
-                            derecha,
-
-                            this.data.velocidad *
-                            dt
-
-                        );
-
-                    }
-
-
-
-                    // =========================================
-                    // E = SUBIR
-                    // =========================================
 
                     if (
                         this.teclas['KeyE']
                     ) {
 
-                        rig.position.y +=
+                        posicion.y +=
 
-                            this.data
-                                .velocidadVertical *
+                            this.data.velocidad *
                             dt;
 
                     }
 
-
-
-                    // =========================================
-                    // Q = BAJAR
-                    // =========================================
 
                     if (
                         this.teclas['KeyQ']
                     ) {
 
-                        rig.position.y -=
+                        posicion.y -=
 
-                            this.data
-                                .velocidadVertical *
+                            this.data.velocidad *
                             dt;
 
                     }
 
 
-
-                    rig.position.y =
+                    posicion.y =
                         THREE.MathUtils.clamp(
 
-                            rig.position.y,
+                            posicion.y,
 
-                            this.data
-                                .alturaMinima,
+                            this.data.alturaMinima,
 
-                            this.data
-                                .alturaMaxima
+                            this.data.alturaMaxima
 
                         );
 
@@ -484,21 +362,17 @@
 
 
         // =====================================================
-        // =====================================================
+        // MOVIMIENTO EN VR - META QUEST 3
         //
-        // MOVIMIENTO VR - META QUEST
+        // JOYSTICK IZQUIERDO:
         //
-        // =====================================================
+        // arriba    = avanzar
+        // abajo     = retroceder
+        // izquierda = moverse izquierda
+        // derecha   = moverse derecha
         //
-        // Joystick izquierdo:
-        //
-        // arriba  -> avanzar
-        // abajo   -> retroceder
-        // izquierda/derecha -> desplazamiento lateral
-        //
-        // La dirección se calcula respecto a la orientación
-        // horizontal del visor.
-        //
+        // El movimiento sigue la dirección horizontal
+        // hacia donde mira el usuario.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -508,20 +382,13 @@
                 schema: {
 
                     velocidad: {
-
                         type: 'number',
-
-                        default: 1.5
-
+                        default: 1.6
                     },
 
-
                     zonaMuerta: {
-
                         type: 'number',
-
-                        default: 0.18
-
+                        default: 0.15
                     }
 
                 },
@@ -530,17 +397,48 @@
                 init: function () {
 
 
+                    this.joystickX = 0;
+
+                    this.joystickY = 0;
+
+
                     this.camara =
                         document.getElementById(
-                            'camara'
+                            'camaraXR'
                         );
 
 
-                    this.vectorAdelante =
+                    this.controlIzquierdo =
+                        document.getElementById(
+                            'controlIzquierdo'
+                        );
+
+
+                    // =========================================
+                    // LEER JOYSTICK
+                    // =========================================
+
+                    this.controlIzquierdo
+                        .addEventListener(
+                            'thumbstickmoved',
+                            (evento) => {
+
+                                this.joystickX =
+                                    evento.detail.x;
+
+                                this.joystickY =
+                                    evento.detail.y;
+
+                            }
+                        );
+
+
+
+                    this.forward =
                         new THREE.Vector3();
 
 
-                    this.vectorDerecha =
+                    this.right =
                         new THREE.Vector3();
 
 
@@ -548,7 +446,6 @@
                         new THREE.Quaternion();
 
                 },
-
 
 
                 tick: function (
@@ -568,19 +465,13 @@
                         this.el.sceneEl;
 
 
-
                     // =========================================
-                    // SOLO EN VR
-                    //
-                    // NO FUNCIONA EN AR.
+                    // SOLO FUNCIONA EN VR
                     // =========================================
 
                     if (
-
                         !escena.is('vr-mode') ||
-
                         escena.is('ar-mode')
-
                     ) {
 
                         return;
@@ -589,111 +480,12 @@
 
 
 
-                    const renderer =
-                        escena.renderer;
+                    let x =
+                        this.joystickX;
 
 
-                    if (!renderer) {
-
-                        return;
-
-                    }
-
-
-
-                    const session =
-                        renderer.xr.getSession();
-
-
-                    if (!session) {
-
-                        return;
-
-                    }
-
-
-
-                    // =========================================
-                    // BUSCAR CONTROLADOR IZQUIERDO
-                    // =========================================
-
-                    let inputIzquierdo =
-                        null;
-
-
-                    for (
-                        const inputSource
-                        of session.inputSources
-                    ) {
-
-
-                        if (
-
-                            inputSource.handedness ===
-                            'left' &&
-
-                            inputSource.gamepad
-
-                        ) {
-
-                            inputIzquierdo =
-                                inputSource;
-
-                            break;
-
-                        }
-
-                    }
-
-
-
-                    if (!inputIzquierdo) {
-
-                        return;
-
-                    }
-
-
-
-                    const gamepad =
-                        inputIzquierdo.gamepad;
-
-
-                    const axes =
-                        gamepad.axes;
-
-
-                    if (
-
-                        !axes ||
-
-                        axes.length < 2
-
-                    ) {
-
-                        return;
-
-                    }
-
-
-
-                    // =========================================
-                    // DETECTAR EJES DEL JOYSTICK
-                    //
-                    // En Quest normalmente los dos últimos
-                    // ejes corresponden al thumbstick.
-                    // =========================================
-
-                    const ejeX =
-                        axes[
-                            axes.length - 2
-                        ] || 0;
-
-
-                    const ejeY =
-                        axes[
-                            axes.length - 1
-                        ] || 0;
+                    let y =
+                        this.joystickY;
 
 
 
@@ -701,23 +493,24 @@
                     // ZONA MUERTA
                     // =========================================
 
-                    let x =
-                        Math.abs(ejeX) >
+                    if (
+                        Math.abs(x) <
                         this.data.zonaMuerta
-                        ?
-                        ejeX
-                        :
-                        0;
+                    ) {
+
+                        x = 0;
+
+                    }
 
 
-                    let y =
-                        Math.abs(ejeY) >
+                    if (
+                        Math.abs(y) <
                         this.data.zonaMuerta
-                        ?
-                        ejeY
-                        :
-                        0;
+                    ) {
 
+                        y = 0;
+
+                    }
 
 
                     if (
@@ -743,68 +536,62 @@
 
 
                     // =========================================
-                    // ADELANTE SEGÚN HACIA DÓNDE MIRAS
+                    // VECTOR HACIA ADELANTE
                     // =========================================
 
-                    this.vectorAdelante.set(
+                    this.forward.set(
                         0,
                         0,
                         -1
                     );
 
 
-                    this.vectorAdelante
+                    this.forward
                         .applyQuaternion(
                             this.quaternion
                         );
 
 
-                    // Movimiento solo horizontal.
+                    // Movimiento horizontal.
 
-                    this.vectorAdelante.y =
-                        0;
+                    this.forward.y = 0;
 
 
                     if (
-                        this.vectorAdelante
-                            .lengthSq() > 0
+                        this.forward.lengthSq() > 0
                     ) {
 
-                        this.vectorAdelante
-                            .normalize();
+                        this.forward.normalize();
 
                     }
 
 
 
                     // =========================================
-                    // DERECHA
+                    // VECTOR HACIA LA DERECHA
                     // =========================================
 
-                    this.vectorDerecha.set(
+                    this.right.set(
                         1,
                         0,
                         0
                     );
 
 
-                    this.vectorDerecha
+                    this.right
                         .applyQuaternion(
                             this.quaternion
                         );
 
 
-                    this.vectorDerecha.y =
-                        0;
+                    this.right.y = 0;
 
 
                     if (
-                        this.vectorDerecha
-                            .lengthSq() > 0
+                        this.right.lengthSq() > 0
                     ) {
 
-                        this.vectorDerecha
-                            .normalize();
+                        this.right.normalize();
 
                     }
 
@@ -820,19 +607,15 @@
 
 
                     // =========================================
-                    // MOVIMIENTO ADELANTE / ATRÁS
+                    // ADELANTE / ATRÁS
                     //
-                    // El eje Y del joystick:
-                    //
-                    // arriba = negativo
-                    // abajo  = positivo
-                    //
-                    // por eso usamos -y.
+                    // Arriba del joystick normalmente
+                    // entrega valor Y negativo.
                     // =========================================
 
                     rig.position.addScaledVector(
 
-                        this.vectorAdelante,
+                        this.forward,
 
                         -y *
                         this.data.velocidad *
@@ -843,12 +626,12 @@
 
 
                     // =========================================
-                    // MOVIMIENTO LATERAL
+                    // IZQUIERDA / DERECHA
                     // =========================================
 
                     rig.position.addScaledVector(
 
-                        this.vectorDerecha,
+                        this.right,
 
                         x *
                         this.data.velocidad *
@@ -864,141 +647,54 @@
 
 
         // =====================================================
-        // =====================================================
+        // MEDIDOR DE FPS Y TIEMPO POR FOTOGRAMA
         //
-        // RIG PARA XR
-        //
-        // =====================================================
-
-        AFRAME.registerComponent(
-            'control-rig-xr',
-            {
-
-                init: function () {
-
-
-                    const rig =
-                        this.el;
-
-
-                    this.posicionPC =
-                        new THREE.Vector3();
-
-
-
-                    rig.sceneEl.addEventListener(
-                        'enter-vr',
-                        () => {
-
-
-                            this.posicionPC.copy(
-                                rig.object3D.position
-                            );
-
-
-
-                            /*
-                            En XR quitamos la altura
-                            artificial de 1.6 m.
-
-                            El propio visor proporciona
-                            la altura física de la cabeza.
-                            */
-
-                            rig.object3D.position.set(
-                                0,
-                                0,
-                                0
-                            );
-
-                        }
-                    );
-
-
-
-                    rig.sceneEl.addEventListener(
-                        'exit-vr',
-                        () => {
-
-
-                            rig.object3D.position.copy(
-                                this.posicionPC
-                            );
-
-                        }
-                    );
-
-                }
-
-            }
-        );
-
-
-
-        // =====================================================
-        // =====================================================
-        //
-        // MEDICIÓN DE RENDIMIENTO / LATENCIA GRÁFICA
-        //
-        // =====================================================
-        //
-        // IMPORTANTE:
-        //
-        // Esto NO representa motion-to-photon latency.
-        //
-        // Estamos midiendo:
-        //
-        // tiempo medio entre fotogramas
-        //
-        // frameTime = deltaTime
+        // frameTime = tiempo medio entre frames
         //
         // FPS = 1000 / frameTime
         //
-        // Es adecuado reportarlo como:
-        //
-        // "Tiempo por fotograma"
-        // "Latencia aproximada de renderizado"
-        //
+        // IMPORTANTE:
+        // Esto es una LATENCIA GRÁFICA APROXIMADA.
+        // No es motion-to-photon latency.
         // =====================================================
 
         AFRAME.registerComponent(
-            'medidor-rendimiento',
+            'medidor-latencia',
             {
 
                 init: function () {
 
+                    this.sumaDelta = 0;
 
-                    this.acumulado =
-                        0;
+                    this.numeroFrames = 0;
 
-
-                    this.frames =
-                        0;
+                    this.tiempoMedicion = 0;
 
 
-                    this.tiempoActualizacion =
-                        0;
-
-
-                    this.elementoFPS =
+                    this.textoFPS =
                         document.getElementById(
                             'fps'
                         );
 
 
-                    this.elementoLatencia =
+                    this.textoLatencia =
                         document.getElementById(
                             'latencia'
                         );
 
 
-                    this.elementoEstado =
+                    this.textoModo =
                         document.getElementById(
-                            'estadoLatencia'
+                            'modoActual'
+                        );
+
+
+                    this.hudVR =
+                        document.getElementById(
+                            'hudLatenciaVR'
                         );
 
                 },
-
 
 
                 tick: function (
@@ -1008,11 +704,8 @@
 
 
                     if (
-
                         !delta ||
-
                         delta > 250
-
                     ) {
 
                         return;
@@ -1020,24 +713,42 @@
                     }
 
 
-                    this.acumulado +=
+                    this.sumaDelta +=
                         delta;
 
 
-                    this.frames++;
+                    this.numeroFrames++;
 
 
-                    this.tiempoActualizacion +=
+                    this.tiempoMedicion +=
                         delta;
+
+
+
+                    const escena =
+                        this.el;
 
 
 
                     // =========================================
-                    // ACTUALIZAR CADA 0.5 s
+                    // MOSTRAR HUD SOLO EN VR
                     // =========================================
 
                     if (
-                        this.tiempoActualizacion <
+                        this.hudVR
+                    ) {
+
+                        this.hudVR.object3D.visible =
+
+                            escena.is('vr-mode') &&
+                            !escena.is('ar-mode');
+
+                    }
+
+
+
+                    if (
+                        this.tiempoMedicion <
                         500
                     ) {
 
@@ -1047,125 +758,140 @@
 
 
 
+                    // =========================================
+                    // PROMEDIO
+                    // =========================================
+
                     const frameTime =
-                        this.acumulado /
-                        this.frames;
+
+                        this.sumaDelta /
+                        this.numeroFrames;
 
 
                     const fps =
+
                         1000 /
                         frameTime;
 
 
 
+                    // =========================================
+                    // MODO ACTUAL
+                    // =========================================
+
+                    let modo =
+                        "PC / navegador";
+
+
                     if (
-                        this.elementoFPS
+                        escena.is('ar-mode')
                     ) {
 
-                        this.elementoFPS.textContent =
-                            fps.toFixed(1);
+                        modo =
+                            "Realidad Aumentada";
+
+                    }
+
+
+                    else if (
+                        escena.is('vr-mode')
+                    ) {
+
+                        modo =
+                            "Realidad Virtual";
+
+                    }
+
+
+                    else if (
+                        /Mobi|Android|iPhone|iPad/i
+                            .test(
+                                navigator.userAgent
+                            )
+                    ) {
+
+                        modo =
+                            "Smartphone / IMU";
 
                     }
 
 
 
+                    // =========================================
+                    // PANEL HTML
+                    // =========================================
+
                     if (
-                        this.elementoLatencia
+                        this.textoFPS
                     ) {
 
-                        this.elementoLatencia
-                            .textContent =
-                            frameTime.toFixed(1) +
+                        this.textoFPS.textContent =
+
+                            fps.toFixed(1) +
+                            " FPS";
+
+                    }
+
+
+                    if (
+                        this.textoLatencia
+                    ) {
+
+                        this.textoLatencia.textContent =
+
+                            frameTime.toFixed(2) +
                             " ms";
 
                     }
 
 
-
-                    // =========================================
-                    // CLASIFICACIÓN
-                    // =========================================
-
                     if (
-                        this.elementoEstado
+                        this.textoModo
                     ) {
 
-
-                        if (
-                            frameTime <= 13
-                        ) {
-
-                            this.elementoEstado
-                                .textContent =
-                                "Muy buena";
-
-
-                            this.elementoEstado
-                                .className =
-                                "verde";
-
-                        }
-
-
-                        else if (
-                            frameTime <= 20
-                        ) {
-
-                            this.elementoEstado
-                                .textContent =
-                                "Buena";
-
-
-                            this.elementoEstado
-                                .className =
-                                "verde";
-
-                        }
-
-
-                        else if (
-                            frameTime <= 33
-                        ) {
-
-                            this.elementoEstado
-                                .textContent =
-                                "Moderada";
-
-
-                            this.elementoEstado
-                                .className =
-                                "amarillo";
-
-                        }
-
-
-                        else {
-
-                            this.elementoEstado
-                                .textContent =
-                                "Alta";
-
-
-                            this.elementoEstado
-                                .className =
-                                "rojo";
-
-                        }
+                        this.textoModo.textContent =
+                            modo;
 
                     }
 
 
 
-                    this.acumulado =
-                        0;
+                    // =========================================
+                    // HUD DENTRO DE META QUEST
+                    // =========================================
+
+                    if (
+                        this.hudVR
+                    ) {
+
+                        this.hudVR.setAttribute(
+
+                            'text',
+
+                            'value',
+
+                            "RENDIMIENTO\n" +
+                            "FPS: " +
+                            fps.toFixed(1) +
+                            "\nFrame: " +
+                            frameTime.toFixed(2) +
+                            " ms"
+
+                        );
+
+                    }
 
 
-                    this.frames =
-                        0;
 
+                    // =========================================
+                    // REINICIAR MEDICIÓN
+                    // =========================================
 
-                    this.tiempoActualizacion =
-                        0;
+                    this.sumaDelta = 0;
+
+                    this.numeroFrames = 0;
+
+                    this.tiempoMedicion = 0;
 
                 }
 
@@ -1175,313 +901,171 @@
 
 
         // =====================================================
-        // CONTROL DEL MODELO
+        // DETECCIÓN DE COMPATIBILIDAD WEBXR
         // =====================================================
 
-        AFRAME.registerComponent(
-            'estado-modelo',
-            {
-
-                init: function () {
+        async function detectarCompatibilidadXR() {
 
 
-                    this.el.addEventListener(
-                        'model-loaded',
-                        () => {
+            const estadoWebXR =
+                document.getElementById(
+                    "estadoWebXR"
+                );
 
 
-                            console.log(
-                                'Modelo CAD cargado correctamente'
-                            );
-
-                        }
-                    );
+            const estadoVR =
+                document.getElementById(
+                    "estadoVR"
+                );
 
 
-                    this.el.addEventListener(
-                        'model-error',
-                        (evento) => {
+            const estadoAR =
+                document.getElementById(
+                    "estadoAR"
+                );
 
 
-                            console.error(
-                                'Error cargando modelo:',
-                                evento.detail
-                            );
 
-                        }
-                    );
+            if (!navigator.xr) {
 
-                }
+
+                estadoWebXR.innerHTML =
+                    "WebXR: no disponible";
+
+                estadoWebXR.className =
+                    "error";
+
+
+                estadoVR.innerHTML =
+                    "VR: no disponible";
+
+                estadoVR.className =
+                    "error";
+
+
+                estadoAR.innerHTML =
+                    "AR: no disponible";
+
+                estadoAR.className =
+                    "error";
+
+
+                return;
 
             }
-        );
 
 
 
-        // =====================================================
-        // =====================================================
-        //
-        // COLOCACIÓN FIJA EN AR
-        //
-        // =====================================================
+            estadoWebXR.innerHTML =
+                "WebXR: disponible";
 
-        AFRAME.registerComponent(
-            'colocacion-ar-fija',
-            {
-
-                init: function () {
+            estadoWebXR.className =
+                "ok";
 
 
-                    const escena =
-                        this.el;
+
+            // =================================================
+            // VR
+            // =================================================
+
+            try {
 
 
-                    this.modelo =
-                        document.getElementById(
-                            'modeloXR'
+                const soportaVR =
+
+                    await navigator.xr
+                        .isSessionSupported(
+                            "immersive-vr"
                         );
 
 
-                    this.reticulo =
-                        document.getElementById(
-                            'reticulo'
-                        );
+                estadoVR.innerHTML =
 
+                    soportaVR
+                    ?
+                    "VR: compatible"
+                    :
+                    "VR: no compatible";
 
-                    this.panel =
-                        document.getElementById(
-                            'panel'
-                        );
 
+                estadoVR.className =
 
-                    this.colocado =
-                        false;
-
-
-
-                    // =========================================
-                    // ENTRAR EN AR
-                    // =========================================
-
-                    escena.addEventListener(
-                        'enter-vr',
-                        () => {
-
-
-                            if (
-                                !escena.is('ar-mode')
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            this.colocado =
-                                false;
-
-
-                            this.modelo
-                                .object3D
-                                .visible =
-                                false;
-
-
-                            this.reticulo
-                                .object3D
-                                .visible =
-                                false;
-
-
-                            if (
-                                this.panel
-                            ) {
-
-                                this.panel
-                                    .style
-                                    .display =
-                                    'none';
-
-                            }
-
-                        }
-                    );
-
-
-
-                    // =========================================
-                    // SUPERFICIE DETECTADA
-                    // =========================================
-
-                    escena.addEventListener(
-                        'ar-hit-test-achieved',
-                        () => {
-
-
-                            if (
-                                this.colocado
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            this.reticulo
-                                .object3D
-                                .visible =
-                                true;
-
-                        }
-                    );
-
-
-
-                    // =========================================
-                    // SUPERFICIE PERDIDA
-                    // =========================================
-
-                    escena.addEventListener(
-                        'ar-hit-test-lost',
-                        () => {
-
-
-                            if (
-                                this.colocado
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            this.reticulo
-                                .object3D
-                                .visible =
-                                false;
-
-                        }
-                    );
-
-
-
-                    // =========================================
-                    // COLOCAR ROBOT
-                    // =========================================
-
-                    escena.addEventListener(
-                        'ar-hit-test-select',
-                        () => {
-
-
-                            if (
-                                !escena.is('ar-mode')
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            if (
-                                this.colocado
-                            ) {
-
-                                return;
-
-                            }
-
-
-
-                            this.modelo
-                                .object3D
-                                .position
-                                .copy(
-
-                                    this.reticulo
-                                        .object3D
-                                        .position
-
-                                );
-
-
-                            this.modelo
-                                .object3D
-                                .visible =
-                                true;
-
-
-                            this.reticulo
-                                .object3D
-                                .visible =
-                                false;
-
-
-                            this.colocado =
-                                true;
-
-
-                            console.log(
-                                'Robot colocado y bloqueado.'
-                            );
-
-                        }
-                    );
-
-
-
-                    // =========================================
-                    // SALIR XR
-                    // =========================================
-
-                    escena.addEventListener(
-                        'exit-vr',
-                        () => {
-
-
-                            this.colocado =
-                                false;
-
-
-                            this.modelo
-                                .object3D
-                                .position
-                                .set(
-                                    0,
-                                    0,
-                                    -3
-                                );
-
-
-                            this.modelo
-                                .object3D
-                                .visible =
-                                true;
-
-
-                            this.reticulo
-                                .object3D
-                                .visible =
-                                false;
-
-
-                            if (
-                                this.panel
-                            ) {
-
-                                this.panel
-                                    .style
-                                    .display =
-                                    'block';
-
-                            }
-
-                        }
-                    );
-
-                }
+                    soportaVR
+                    ?
+                    "ok"
+                    :
+                    "error";
 
             }
+
+
+            catch (error) {
+
+
+                estadoVR.innerHTML =
+                    "VR: error";
+
+
+                estadoVR.className =
+                    "error";
+
+            }
+
+
+
+            // =================================================
+            // AR
+            // =================================================
+
+            try {
+
+
+                const soportaAR =
+
+                    await navigator.xr
+                        .isSessionSupported(
+                            "immersive-ar"
+                        );
+
+
+                estadoAR.innerHTML =
+
+                    soportaAR
+                    ?
+                    "AR: compatible"
+                    :
+                    "AR: no compatible";
+
+
+                estadoAR.className =
+
+                    soportaAR
+                    ?
+                    "ok"
+                    :
+                    "error";
+
+            }
+
+
+            catch (error) {
+
+
+                estadoAR.innerHTML =
+                    "AR: error";
+
+
+                estadoAR.className =
+                    "error";
+
+            }
+
+        }
+
+
+        window.addEventListener(
+            "load",
+            detectarCompatibilidadXR
         );
 
 
@@ -1499,119 +1083,132 @@
      PANEL DE INFORMACIÓN
 ========================================================= -->
 
-<div id="panel">
+<div id="overlay">
 
 
     <div id="titulo">
 
-        MODELO CAD INDUSTRIAL XR
+        CELDA INDUSTRIAL XR
 
     </div>
 
 
-    <b>PC</b>
 
-    <br>
+    <div
+        id="estadoWebXR"
+        class="esperando">
 
-    W / S = adelante / atrás
+        WebXR: comprobando...
 
-    <br>
-
-    A / D = izquierda / derecha
-
-    <br>
-
-    E = subir
-
-    <br>
-
-    Q = bajar
-
-    <br>
-
-    Mouse = mirar
+    </div>
 
 
-    <br><br>
+    <div
+        id="estadoVR"
+        class="esperando">
+
+        VR: comprobando...
+
+    </div>
 
 
-    <b>Celular</b>
+    <div
+        id="estadoAR"
+        class="esperando">
 
-    <br>
+        AR: comprobando...
 
-    Mueve el teléfono para usar IMU.
-
-
-    <br><br>
-
-
-    <b>VR - Meta Quest 3</b>
-
-    <br>
-
-    Joystick izquierdo = desplazamiento
-
-    <br>
-
-    Mover la cabeza = mirar
-
-    <br>
-
-    Caminar físicamente = seguimiento 6DoF
-
-
-    <br><br>
-
-
-    <b>AR</b>
-
-    <br>
-
-    Busca una superficie y toca
-    una vez para colocar el robot.
+    </div>
 
 
 
     <!-- =====================================================
-         RENDIMIENTO
+         LATENCIA / RENDIMIENTO
     ====================================================== -->
 
     <div id="rendimiento">
-
 
         <b>Rendimiento</b>
 
         <br>
 
+        Modo:
+        <span id="modoActual">
+            detectando...
+        </span>
+
+        <br>
+
         FPS:
-        <span id="fps">
-            --
-        </span>
-
-
-        <br>
-
-
-        Tiempo por fotograma:
-
-        <span id="latencia">
-            -- ms
-        </span>
-
-
-        <br>
-
-
-        Estado:
-
         <span
-            id="estadoLatencia"
-            class="verde">
+            id="fps"
+            class="ok">
 
-            Midiendo...
+            --
 
         </span>
 
+        <br>
+
+        Latencia gráfica aprox.:
+        <span
+            id="latencia"
+            class="ok">
+
+            -- ms
+
+        </span>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         CONTROLES
+    ====================================================== -->
+
+    <div id="controles">
+
+        <b>PC</b>
+
+        <br>
+
+        W / S = adelante / atrás
+
+        <br>
+
+        A / D = izquierda / derecha
+
+        <br>
+
+        E = subir
+
+        <br>
+
+        Q = bajar
+
+
+        <br><br>
+
+
+        <b>Meta Quest 3</b>
+
+        <br>
+
+        Joystick izquierdo = movimiento
+
+        <br>
+
+        Mover cabeza = mirar
+
+    </div>
+
+
+
+    <div id="instruccionAR">
+
+        En AR podrás colocar la celda
+        sobre una superficie real.
 
     </div>
 
@@ -1621,63 +1218,42 @@
 
 
 <!-- =========================================================
-     ESCENA
+     ESCENA PRINCIPAL
 ========================================================= -->
 
 <a-scene
-
 
     xr-mode-ui="
         enabled: true;
         XRMode: xr;
     "
 
-
     webxr="
-        optionalFeatures: hit-test, local-floor;
-        referenceSpaceType: local-floor;
+        referenceSpaceType: local;
+        optionalFeatures: hit-test, dom-overlay, local-floor;
+        overlayElement: #overlay;
     "
-
 
     ar-hit-test="
-        target: #reticulo;
-        type: map;
-        mapSize: 0.18 0.18;
+        target: #objetoXR;
+        type: footprint;
     "
 
+    estado-hit-test
 
-    colocacion-ar-fija
-
-
-    medidor-rendimiento
-
+    medidor-latencia
 
     renderer="
-        antialias: true;
         colorManagement: true;
         alpha: true;
+        antialias: true;
+    "
+
+    background="
+        color: #ECECEC;
+        transparent: true;
     "
 >
-
-
-
-    <!-- =====================================================
-         MODELO GLB
-    ====================================================== -->
-
-    <a-assets timeout="30000">
-
-
-        <a-asset-item
-
-            id="modeloIndustrial"
-
-            src="./models/modelo_industrial.glb">
-
-        </a-asset-item>
-
-
-    </a-assets>
 
 
 
@@ -1691,7 +1267,7 @@
 
         color="#FFFFFF"
 
-        intensity="1">
+        intensity="0.85">
 
     </a-light>
 
@@ -1702,100 +1278,636 @@
 
         color="#FFFFFF"
 
-        intensity="0.7"
+        intensity="0.8"
 
-        position="-2 4 3">
+        position="-2 4 2">
 
     </a-light>
 
 
 
     <!-- =====================================================
-         RETÍCULO AR
+         MODELO INDUSTRIAL COMPLETO
     ====================================================== -->
 
     <a-entity
 
-        id="reticulo"
+        id="objetoXR"
 
-        visible="false"
+        hide-on-enter-ar
+
+        position="0 0 -4"
+
+        scale="0.45 0.45 0.45"
     >
 
 
-        <a-ring
+
+        <!-- =================================================
+             PISO CELDA
+        ================================================== -->
+
+        <a-plane
+
+            position="0 0.02 0"
 
             rotation="-90 0 0"
 
-            radius-inner="0.05"
+            width="7.5"
 
-            radius-outer="0.08"
+            height="4.5"
 
-            color="#00FF88"
+            color="#B0BEC5"
 
             material="
-                shader: flat;
-                side: double;
-            ">
+                roughness: 0.9;
+            "
 
-        </a-ring>
+            shadow="receive: true">
 
-
-    </a-entity>
+        </a-plane>
 
 
 
-    <!-- =====================================================
-         ROBOT
-    ====================================================== -->
+        <!-- =================================================
+             BANDA TRANSPORTADORA
+        ================================================== -->
 
-    <a-entity
-
-        id="modeloXR"
-
-        position="0 0 -3"
-
-        visible="true"
-    >
+        <a-entity id="bandaTransportadora">
 
 
-        <a-entity
 
-            id="robotCAD"
+            <a-box
 
-            gltf-model="#modeloIndustrial"
+                position="-0.2 1 0"
 
-            estado-modelo
+                width="5"
 
-            position="0 0 0"
+                height="0.25"
 
-            rotation="0 90 0"
+                depth="1.5"
 
-            scale="0.003 0.003 0.003">
+                color="#455A64"
+
+                shadow>
+
+            </a-box>
+
+
+
+            <a-box
+
+                position="-0.2 1.17 0"
+
+                width="4.65"
+
+                height="0.08"
+
+                depth="1.18"
+
+                color="#212121"
+
+                shadow>
+
+            </a-box>
+
+
+
+            <a-box
+
+                position="-0.2 1.32 -0.68"
+
+                width="5"
+
+                height="0.15"
+
+                depth="0.12"
+
+                color="#78909C">
+
+            </a-box>
+
+
+
+            <a-box
+
+                position="-0.2 1.32 0.68"
+
+                width="5"
+
+                height="0.15"
+
+                depth="0.12"
+
+                color="#78909C">
+
+            </a-box>
+
+
+
+            <!-- RODILLOS -->
+
+            <a-cylinder
+
+                position="-2.45 1.18 0"
+
+                rotation="90 0 0"
+
+                radius="0.23"
+
+                height="1.35"
+
+                color="#90A4AE">
+
+            </a-cylinder>
+
+
+            <a-cylinder
+
+                position="2.05 1.18 0"
+
+                rotation="90 0 0"
+
+                radius="0.23"
+
+                height="1.35"
+
+                color="#90A4AE">
+
+            </a-cylinder>
+
+
+
+            <a-cylinder
+                position="-1.5 1.10 0"
+                rotation="90 0 0"
+                radius="0.09"
+                height="1.15"
+                color="#607D8B">
+            </a-cylinder>
+
+
+            <a-cylinder
+                position="-0.6 1.10 0"
+                rotation="90 0 0"
+                radius="0.09"
+                height="1.15"
+                color="#607D8B">
+            </a-cylinder>
+
+
+            <a-cylinder
+                position="0.3 1.10 0"
+                rotation="90 0 0"
+                radius="0.09"
+                height="1.15"
+                color="#607D8B">
+            </a-cylinder>
+
+
+            <a-cylinder
+                position="1.2 1.10 0"
+                rotation="90 0 0"
+                radius="0.09"
+                height="1.15"
+                color="#607D8B">
+            </a-cylinder>
+
+
+
+            <!-- =================================================
+                 PATAS
+            ================================================== -->
+
+            <a-box
+                position="-2.1 0.48 -0.55"
+                width="0.18"
+                height="0.95"
+                depth="0.18"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="-2.1 0.48 0.55"
+                width="0.18"
+                height="0.95"
+                depth="0.18"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="1.7 0.48 -0.55"
+                width="0.18"
+                height="0.95"
+                depth="0.18"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="1.7 0.48 0.55"
+                width="0.18"
+                height="0.95"
+                depth="0.18"
+                color="#607D8B">
+            </a-box>
+
+
+
+            <!-- TRAVESAÑOS -->
+
+            <a-box
+                position="-2.1 0.25 0"
+                width="0.15"
+                height="0.15"
+                depth="1.15"
+                color="#455A64">
+            </a-box>
+
+
+            <a-box
+                position="1.7 0.25 0"
+                width="0.15"
+                height="0.15"
+                depth="1.15"
+                color="#455A64">
+            </a-box>
+
+
+
+            <!-- =================================================
+                 CAJA FIJA
+            ================================================== -->
+
+            <a-box
+
+                position="-1.7 1.55 0"
+
+                width="0.6"
+
+                height="0.65"
+
+                depth="0.55"
+
+                color="#FF9800"
+
+                shadow>
+
+            </a-box>
+
+
+
+            <!-- =================================================
+                 PRODUCTO MOVIÉNDOSE
+            ================================================== -->
+
+            <a-box
+
+                position="-1.1 1.55 0"
+
+                width="0.55"
+
+                height="0.65"
+
+                depth="0.55"
+
+                color="#FFC107"
+
+                shadow
+
+                animation="
+                    property: position;
+                    from: -1.2 1.55 0;
+                    to: 1.55 1.55 0;
+                    dur: 5000;
+                    easing: linear;
+                    loop: true;
+                ">
+
+            </a-box>
+
 
         </a-entity>
 
 
+
+        <!-- =================================================
+             SENSOR FOTOELÉCTRICO
+        ================================================== -->
+
+        <a-entity id="sensorFotoelectrico">
+
+
+            <a-cylinder
+
+                position="0.55 1.5 -1"
+
+                radius="0.07"
+
+                height="1"
+
+                color="#263238">
+
+            </a-cylinder>
+
+
+            <a-box
+
+                position="0.55 1.97 -0.65"
+
+                width="0.14"
+
+                height="0.14"
+
+                depth="0.7"
+
+                color="#263238">
+
+            </a-box>
+
+
+            <a-box
+
+                position="0.55 1.97 -0.27"
+
+                width="0.28"
+
+                height="0.24"
+
+                depth="0.25"
+
+                color="#37474F">
+
+            </a-box>
+
+
+            <a-sphere
+
+                position="0.55 1.98 -0.13"
+
+                radius="0.075"
+
+                color="#00E676"
+
+                material="
+                    emissive: #00E676;
+                    emissiveIntensity: 0.8;
+                "
+
+                animation="
+                    property: material.emissiveIntensity;
+                    from: 0;
+                    to: 1;
+                    dur: 700;
+                    dir: alternate;
+                    loop: true;
+                ">
+
+            </a-sphere>
+
+
+            <a-box
+
+                position="0.55 1.63 0"
+
+                width="0.035"
+
+                height="0.035"
+
+                depth="1.25"
+
+                color="#F44336"
+
+                material="
+                    transparent: true;
+                    opacity: 0.55;
+                    emissive: #F44336;
+                ">
+
+            </a-box>
+
+
+        </a-entity>
+
+
+
+        <!-- =================================================
+             PANEL DE CONTROL
+        ================================================== -->
+
+        <a-entity
+            id="panelControl"
+            position="2.75 0 1.15">
+
+
+            <a-box
+                position="0 0.65 0"
+                width="0.18"
+                height="1.3"
+                depth="0.18"
+                color="#455A64">
+            </a-box>
+
+
+            <a-box
+                position="0 1.55 0"
+                width="1"
+                height="1.15"
+                depth="0.55"
+                color="#607D8B"
+                shadow>
+            </a-box>
+
+
+            <a-box
+                position="0 1.72 -0.29"
+                width="0.68"
+                height="0.43"
+                depth="0.04"
+                color="#263238">
+            </a-box>
+
+
+            <a-box
+                position="0 1.72 -0.32"
+                width="0.58"
+                height="0.33"
+                depth="0.025"
+                color="#2196F3"
+
+                material="
+                    emissive: #1565C0;
+                    emissiveIntensity: 0.4;
+                ">
+            </a-box>
+
+
+            <a-cylinder
+                position="-0.22 1.30 -0.32"
+                rotation="90 0 0"
+                radius="0.09"
+                height="0.05"
+                color="#00E676">
+            </a-cylinder>
+
+
+            <a-cylinder
+                position="0.22 1.30 -0.32"
+                rotation="90 0 0"
+                radius="0.09"
+                height="0.05"
+                color="#F44336">
+            </a-cylinder>
+
+
+            <a-cylinder
+                position="0 2.25 0"
+                radius="0.11"
+                height="0.35"
+                color="#FFC107"
+
+                material="
+                    emissive: #FFC107;
+                    emissiveIntensity: 0.6;
+                ">
+            </a-cylinder>
+
+
+        </a-entity>
+
+
+
+        <!-- =================================================
+             MESA / RECEPCIÓN
+        ================================================== -->
+
+        <a-entity
+
+            id="zonaRecepcion"
+
+            position="2.7 0 -0.25"
+        >
+
+
+            <a-box
+                position="0 0.85 0"
+                width="1.15"
+                height="0.15"
+                depth="1.4"
+                color="#CFD8DC"
+                shadow>
+            </a-box>
+
+
+            <a-box
+                position="-0.45 0.4 -0.5"
+                width="0.15"
+                height="0.8"
+                depth="0.15"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="0.45 0.4 -0.5"
+                width="0.15"
+                height="0.8"
+                depth="0.15"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="-0.45 0.4 0.5"
+                width="0.15"
+                height="0.8"
+                depth="0.15"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="0.45 0.4 0.5"
+                width="0.15"
+                height="0.8"
+                depth="0.15"
+                color="#607D8B">
+            </a-box>
+
+
+            <a-box
+                position="0 1.2 0"
+                width="0.55"
+                height="0.55"
+                depth="0.55"
+                color="#8BC34A"
+                shadow>
+            </a-box>
+
+
+        </a-entity>
+
+
+
+        <!-- =================================================
+             MARCAS DE SEGURIDAD
+        ================================================== -->
+
+        <a-box
+
+            position="0 -0.01 -1.7"
+
+            width="6.2"
+
+            height="0.025"
+
+            depth="0.08"
+
+            color="#FFC107">
+
+        </a-box>
+
+
+        <a-box
+
+            position="0 -0.01 1.7"
+
+            width="6.2"
+
+            height="0.025"
+
+            depth="0.08"
+
+            color="#FFC107">
+
+        </a-box>
+
+
     </a-entity>
 
 
 
     <!-- =====================================================
-         PISO
+         PISO GENERAL
     ====================================================== -->
 
     <a-plane
 
-        position="0 0 -3"
+        hide-on-enter-ar
+
+        position="0 0 -4"
 
         rotation="-90 0 0"
 
-        width="20"
+        width="18"
 
-        height="20"
+        height="18"
 
         color="#78909C"
 
-        hide-on-enter-ar>
+        shadow="receive: true">
 
     </a-plane>
 
@@ -1807,9 +1919,9 @@
 
     <a-sky
 
-        color="#DCE6EA"
+        hide-on-enter-ar
 
-        hide-on-enter-ar>
+        color="#DCE6EA">
 
     </a-sky>
 
@@ -1818,30 +1930,28 @@
     <!-- =====================================================
          RIG DEL USUARIO
 
-         movimiento-pc  -> PC
-         movimiento-vr  -> META QUEST
+         PC:
+         WASD + Q/E
+
+         META QUEST:
+         JOYSTICK IZQUIERDO
     ====================================================== -->
 
     <a-entity
 
-        id="rig"
+        id="rigUsuario"
 
         position="0 1.6 0"
 
-        control-rig-xr
-
-
-        movimiento-pc="
-            velocidad: 2;
-            velocidadVertical: 1.5;
-            alturaMinima: 0.25;
-            alturaMaxima: 5;
+        movimiento-vertical="
+            velocidad: 1.5;
+            alturaMinima: 0.3;
+            alturaMaxima: 4;
         "
 
-
         movimiento-vr="
-            velocidad: 1.5;
-            zonaMuerta: 0.18;
+            velocidad: 1.6;
+            zonaMuerta: 0.15;
         "
     >
 
@@ -1853,7 +1963,7 @@
 
         <a-camera
 
-            id="camara"
+            id="camaraXR"
 
             position="0 0 0"
 
@@ -1862,24 +1972,53 @@
                 mouseEnabled: true;
                 touchEnabled: true;
                 magicWindowTrackingEnabled: true;
-            ">
+            "
+
+            wasd-controls="
+                acceleration: 25;
+            "
+        >
+
+
+
+            <!-- =============================================
+                 HUD DE LATENCIA EN VR
+
+                 Se oculta automáticamente fuera de VR.
+            ============================================== -->
+
+            <a-text
+
+                id="hudLatenciaVR"
+
+                value="RENDIMIENTO"
+
+                position="-0.55 -0.38 -1.2"
+
+                width="1.8"
+
+                align="left"
+
+                color="#00FF88"
+
+                visible="false">
+
+            </a-text>
+
 
         </a-camera>
 
 
 
         <!-- =================================================
-             CONTROLADOR IZQUIERDO META QUEST
-
-             tracked-controls permite que WebXR reconozca
-             el controlador.
+             CONTROL IZQUIERDO META QUEST 3
         ================================================== -->
 
         <a-entity
 
             id="controlIzquierdo"
 
-            tracked-controls="
+            oculus-touch-controls="
                 hand: left;
             ">
 
@@ -1888,14 +2027,14 @@
 
 
         <!-- =================================================
-             CONTROLADOR DERECHO
+             CONTROL DERECHO
         ================================================== -->
 
         <a-entity
 
             id="controlDerecho"
 
-            tracked-controls="
+            oculus-touch-controls="
                 hand: right;
             ">
 
@@ -1903,7 +2042,6 @@
 
 
     </a-entity>
-
 
 
 </a-scene>
