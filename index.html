@@ -13,8 +13,7 @@
                  user-scalable=no"
     >
 
-    <title>Laboratorio XR - Celda Industrial</title>
-
+    <title>Laboratorio XR - A-Frame</title>
 
     <!-- =====================================================
          A-FRAME 1.8.0
@@ -23,23 +22,30 @@
     <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
 
 
+    <!-- =====================================================
+         ESTILOS
+    ====================================================== -->
+
     <style>
 
+        html,
         body {
             margin: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             font-family: Arial, sans-serif;
         }
 
 
-        #overlay {
+        #panel {
 
             position: fixed;
 
             top: 15px;
             left: 15px;
 
-            width: 300px;
+            width: 290px;
 
             padding: 14px;
 
@@ -54,6 +60,8 @@
             font-size: 13px;
 
             line-height: 1.5;
+
+            pointer-events: none;
         }
 
 
@@ -84,18 +92,6 @@
         }
 
 
-        #instruccionAR {
-
-            margin-top: 10px;
-
-            padding-top: 10px;
-
-            border-top: 1px solid #777;
-
-            color: white;
-        }
-
-
         #rendimiento {
 
             margin-top: 10px;
@@ -120,97 +116,6 @@
 
 
     <script>
-
-
-        // =====================================================
-        // ESTADO DEL HIT TEST
-        // =====================================================
-
-        AFRAME.registerComponent(
-            'estado-hit-test',
-            {
-
-                init: function () {
-
-                    const escena = this.el;
-
-
-                    escena.addEventListener(
-                        'ar-hit-test-start',
-                        function () {
-
-                            const texto =
-                                document.getElementById(
-                                    'instruccionAR'
-                                );
-
-
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "Buscando superficies..." +
-                                    "<br>" +
-                                    "Mueve lentamente el dispositivo.";
-
-                            }
-
-                        }
-                    );
-
-
-                    escena.addEventListener(
-                        'ar-hit-test-achieved',
-                        function () {
-
-                            const texto =
-                                document.getElementById(
-                                    'instruccionAR'
-                                );
-
-
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "<span class='ok'>" +
-                                    "Superficie detectada." +
-                                    "</span>" +
-                                    "<br>" +
-                                    "Toca la pantalla para colocar " +
-                                    "la celda industrial.";
-
-                            }
-
-                        }
-                    );
-
-
-                    escena.addEventListener(
-                        'ar-hit-test-select',
-                        function () {
-
-                            const texto =
-                                document.getElementById(
-                                    'instruccionAR'
-                                );
-
-
-                            if (texto) {
-
-                                texto.innerHTML =
-                                    "<span class='ok'>" +
-                                    "Celda colocada correctamente." +
-                                    "</span>";
-
-                            }
-
-                        }
-                    );
-
-                }
-
-            }
-        );
-
 
 
         // =====================================================
@@ -249,22 +154,20 @@
                     this.teclas = {};
 
 
-                    this.keyDown =
-                        (evento) => {
+                    this.keyDown = (evento) => {
 
-                            this.teclas[evento.code] =
-                                true;
+                        this.teclas[evento.code] =
+                            true;
 
-                        };
+                    };
 
 
-                    this.keyUp =
-                        (evento) => {
+                    this.keyUp = (evento) => {
 
-                            this.teclas[evento.code] =
-                                false;
+                        this.teclas[evento.code] =
+                            false;
 
-                        };
+                    };
 
 
                     window.addEventListener(
@@ -287,9 +190,7 @@
                 ) {
 
                     if (!delta) {
-
                         return;
-
                     }
 
 
@@ -297,9 +198,8 @@
                         this.el.sceneEl;
 
 
-                    // =========================================
-                    // NO INTERFERIR EN AR / VR
-                    // =========================================
+                    // No modificar la altura artificialmente
+                    // durante VR o AR.
 
                     if (
                         escena.is('vr-mode') ||
@@ -319,24 +219,26 @@
                         this.el.object3D.position;
 
 
+                    // E = subir
+
                     if (
                         this.teclas['KeyE']
                     ) {
 
                         posicion.y +=
-
                             this.data.velocidad *
                             dt;
 
                     }
 
 
+                    // Q = bajar
+
                     if (
                         this.teclas['KeyQ']
                     ) {
 
                         posicion.y -=
-
                             this.data.velocidad *
                             dt;
 
@@ -364,15 +266,15 @@
         // =====================================================
         // MOVIMIENTO EN VR - META QUEST 3
         //
-        // JOYSTICK IZQUIERDO:
+        // Joystick izquierdo:
         //
-        // arriba    = avanzar
-        // abajo     = retroceder
-        // izquierda = moverse izquierda
-        // derecha   = moverse derecha
+        // Arriba     = avanzar
+        // Abajo      = retroceder
+        // Izquierda  = izquierda
+        // Derecha    = derecha
         //
-        // El movimiento sigue la dirección horizontal
-        // hacia donde mira el usuario.
+        // El movimiento depende de hacia dónde
+        // esté mirando el usuario.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -383,7 +285,7 @@
 
                     velocidad: {
                         type: 'number',
-                        default: 1.6
+                        default: 1.5
                     },
 
                     zonaMuerta: {
@@ -395,7 +297,6 @@
 
 
                 init: function () {
-
 
                     this.joystickX = 0;
 
@@ -414,9 +315,7 @@
                         );
 
 
-                    // =========================================
-                    // LEER JOYSTICK
-                    // =========================================
+                    // Leer joystick izquierdo.
 
                     this.controlIzquierdo
                         .addEventListener(
@@ -431,7 +330,6 @@
 
                             }
                         );
-
 
 
                     this.forward =
@@ -453,11 +351,8 @@
                     delta
                 ) {
 
-
                     if (!delta) {
-
                         return;
-
                     }
 
 
@@ -465,9 +360,7 @@
                         this.el.sceneEl;
 
 
-                    // =========================================
-                    // SOLO FUNCIONA EN VR
-                    // =========================================
+                    // Solo locomoción virtual en VR.
 
                     if (
                         !escena.is('vr-mode') ||
@@ -479,7 +372,6 @@
                     }
 
 
-
                     let x =
                         this.joystickX;
 
@@ -488,10 +380,7 @@
                         this.joystickY;
 
 
-
-                    // =========================================
-                    // ZONA MUERTA
-                    // =========================================
+                    // Zona muerta joystick.
 
                     if (
                         Math.abs(x) <
@@ -523,10 +412,9 @@
                     }
 
 
-
-                    // =========================================
-                    // ORIENTACIÓN DEL VISOR
-                    // =========================================
+                    // =================================================
+                    // ORIENTACIÓN ACTUAL DE LA CABEZA
+                    // =================================================
 
                     this.camara.object3D
                         .getWorldQuaternion(
@@ -534,10 +422,9 @@
                         );
 
 
-
-                    // =========================================
+                    // =================================================
                     // VECTOR HACIA ADELANTE
-                    // =========================================
+                    // =================================================
 
                     this.forward.set(
                         0,
@@ -552,7 +439,7 @@
                         );
 
 
-                    // Movimiento horizontal.
+                    // Solo desplazamiento horizontal.
 
                     this.forward.y = 0;
 
@@ -566,10 +453,9 @@
                     }
 
 
-
-                    // =========================================
-                    // VECTOR HACIA LA DERECHA
-                    // =========================================
+                    // =================================================
+                    // VECTOR DERECHA
+                    // =================================================
 
                     this.right.set(
                         1,
@@ -596,7 +482,6 @@
                     }
 
 
-
                     const dt =
                         delta / 1000;
 
@@ -605,13 +490,7 @@
                         this.el.object3D;
 
 
-
-                    // =========================================
-                    // ADELANTE / ATRÁS
-                    //
-                    // Arriba del joystick normalmente
-                    // entrega valor Y negativo.
-                    // =========================================
+                    // Arriba del joystick suele ser Y negativo.
 
                     rig.position.addScaledVector(
 
@@ -623,11 +502,6 @@
 
                     );
 
-
-
-                    // =========================================
-                    // IZQUIERDA / DERECHA
-                    // =========================================
 
                     rig.position.addScaledVector(
 
@@ -647,15 +521,15 @@
 
 
         // =====================================================
-        // MEDIDOR DE FPS Y TIEMPO POR FOTOGRAMA
+        // MEDICIÓN DE FPS Y LATENCIA GRÁFICA
         //
-        // frameTime = tiempo medio entre frames
+        // Se calcula:
         //
-        // FPS = 1000 / frameTime
+        // Tf = tiempo promedio entre fotogramas
         //
-        // IMPORTANTE:
-        // Esto es una LATENCIA GRÁFICA APROXIMADA.
-        // No es motion-to-photon latency.
+        // FPS = 1000 / Tf
+        //
+        // NO corresponde a la latencia motion-to-photon.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -702,7 +576,6 @@
                     delta
                 ) {
 
-
                     if (
                         !delta ||
                         delta > 250
@@ -713,26 +586,18 @@
                     }
 
 
-                    this.sumaDelta +=
-                        delta;
-
+                    this.sumaDelta += delta;
 
                     this.numeroFrames++;
 
-
-                    this.tiempoMedicion +=
-                        delta;
-
+                    this.tiempoMedicion += delta;
 
 
                     const escena =
                         this.el;
 
 
-
-                    // =========================================
-                    // MOSTRAR HUD SOLO EN VR
-                    // =========================================
+                    // HUD solo visible dentro de VR.
 
                     if (
                         this.hudVR
@@ -746,6 +611,7 @@
                     }
 
 
+                    // Actualizar cada 0.5 segundos.
 
                     if (
                         this.tiempoMedicion <
@@ -756,11 +622,6 @@
 
                     }
 
-
-
-                    // =========================================
-                    // PROMEDIO
-                    // =========================================
 
                     const frameTime =
 
@@ -774,10 +635,9 @@
                         frameTime;
 
 
-
-                    // =========================================
-                    // MODO ACTUAL
-                    // =========================================
+                    // =================================================
+                    // DETERMINAR MODO
+                    // =================================================
 
                     let modo =
                         "PC / navegador";
@@ -792,7 +652,6 @@
 
                     }
 
-
                     else if (
                         escena.is('vr-mode')
                     ) {
@@ -802,12 +661,11 @@
 
                     }
 
-
                     else if (
                         /Mobi|Android|iPhone|iPad/i
-                            .test(
-                                navigator.userAgent
-                            )
+                        .test(
+                            navigator.userAgent
+                        )
                     ) {
 
                         modo =
@@ -816,10 +674,9 @@
                     }
 
 
-
-                    // =========================================
+                    // =================================================
                     // PANEL HTML
-                    // =========================================
+                    // =================================================
 
                     if (
                         this.textoFPS
@@ -855,10 +712,9 @@
                     }
 
 
-
-                    // =========================================
-                    // HUD DENTRO DE META QUEST
-                    // =========================================
+                    // =================================================
+                    // TEXTO DENTRO DE META QUEST
+                    // =================================================
 
                     if (
                         this.hudVR
@@ -873,7 +729,7 @@
                             "RENDIMIENTO\n" +
                             "FPS: " +
                             fps.toFixed(1) +
-                            "\nFrame: " +
+                            "\nTiempo frame: " +
                             frameTime.toFixed(2) +
                             " ms"
 
@@ -881,11 +737,6 @@
 
                     }
 
-
-
-                    // =========================================
-                    // REINICIAR MEDICIÓN
-                    // =========================================
 
                     this.sumaDelta = 0;
 
@@ -901,11 +752,10 @@
 
 
         // =====================================================
-        // DETECCIÓN DE COMPATIBILIDAD WEBXR
+        // COMPATIBILIDAD WEBXR
         // =====================================================
 
         async function detectarCompatibilidadXR() {
-
 
             const estadoWebXR =
                 document.getElementById(
@@ -919,15 +769,7 @@
                 );
 
 
-            const estadoAR =
-                document.getElementById(
-                    "estadoAR"
-                );
-
-
-
             if (!navigator.xr) {
-
 
                 estadoWebXR.innerHTML =
                     "WebXR: no disponible";
@@ -942,18 +784,9 @@
                 estadoVR.className =
                     "error";
 
-
-                estadoAR.innerHTML =
-                    "AR: no disponible";
-
-                estadoAR.className =
-                    "error";
-
-
                 return;
 
             }
-
 
 
             estadoWebXR.innerHTML =
@@ -963,13 +796,7 @@
                 "ok";
 
 
-
-            // =================================================
-            // VR
-            // =================================================
-
             try {
-
 
                 const soportaVR =
 
@@ -998,64 +825,12 @@
 
             }
 
-
             catch (error) {
-
 
                 estadoVR.innerHTML =
                     "VR: error";
 
-
                 estadoVR.className =
-                    "error";
-
-            }
-
-
-
-            // =================================================
-            // AR
-            // =================================================
-
-            try {
-
-
-                const soportaAR =
-
-                    await navigator.xr
-                        .isSessionSupported(
-                            "immersive-ar"
-                        );
-
-
-                estadoAR.innerHTML =
-
-                    soportaAR
-                    ?
-                    "AR: compatible"
-                    :
-                    "AR: no compatible";
-
-
-                estadoAR.className =
-
-                    soportaAR
-                    ?
-                    "ok"
-                    :
-                    "error";
-
-            }
-
-
-            catch (error) {
-
-
-                estadoAR.innerHTML =
-                    "AR: error";
-
-
-                estadoAR.className =
                     "error";
 
             }
@@ -1083,15 +858,14 @@
      PANEL DE INFORMACIÓN
 ========================================================= -->
 
-<div id="overlay">
+<div id="panel">
 
 
     <div id="titulo">
 
-        CELDA INDUSTRIAL XR
+        LABORATORIO XR - PRIMITIVAS
 
     </div>
-
 
 
     <div
@@ -1112,18 +886,9 @@
     </div>
 
 
-    <div
-        id="estadoAR"
-        class="esperando">
-
-        AR: comprobando...
-
-    </div>
-
-
 
     <!-- =====================================================
-         LATENCIA / RENDIMIENTO
+         RENDIMIENTO
     ====================================================== -->
 
     <div id="rendimiento">
@@ -1133,13 +898,16 @@
         <br>
 
         Modo:
+
         <span id="modoActual">
             detectando...
         </span>
 
+
         <br>
 
         FPS:
+
         <span
             id="fps"
             class="ok">
@@ -1148,9 +916,11 @@
 
         </span>
 
+
         <br>
 
         Latencia gráfica aprox.:
+
         <span
             id="latencia"
             class="ok">
@@ -1187,6 +957,20 @@
 
         Q = bajar
 
+        <br>
+
+        Mouse = mirar
+
+
+        <br><br>
+
+
+        <b>Smartphone</b>
+
+        <br>
+
+        Mover teléfono = IMU
+
 
         <br><br>
 
@@ -1195,20 +979,11 @@
 
         <br>
 
-        Joystick izquierdo = movimiento
+        Joystick izquierdo = moverse
 
         <br>
 
         Mover cabeza = mirar
-
-    </div>
-
-
-
-    <div id="instruccionAR">
-
-        En AR podrás colocar la celda
-        sobre una superficie real.
 
     </div>
 
@@ -1218,7 +993,7 @@
 
 
 <!-- =========================================================
-     ESCENA PRINCIPAL
+     ESCENA
 ========================================================= -->
 
 <a-scene
@@ -1229,699 +1004,97 @@
     "
 
     webxr="
-        referenceSpaceType: local;
-        optionalFeatures: hit-test, dom-overlay, local-floor;
-        overlayElement: #overlay;
+        referenceSpaceType: local-floor;
+        optionalFeatures: local-floor;
     "
-
-    ar-hit-test="
-        target: #objetoXR;
-        type: footprint;
-    "
-
-    estado-hit-test
 
     medidor-latencia
 
     renderer="
-        colorManagement: true;
-        alpha: true;
         antialias: true;
-    "
-
-    background="
-        color: #ECECEC;
-        transparent: true;
+        colorManagement: true;
     "
 >
 
 
 
     <!-- =====================================================
-         ILUMINACIÓN
+         CUBO
     ====================================================== -->
 
-    <a-light
+    <a-box
 
-        type="ambient"
+        position="-1 0.5 -3"
 
-        color="#FFFFFF"
+        rotation="0 45 0"
 
-        intensity="0.85">
+        color="#4CC3D9">
 
-    </a-light>
-
-
-    <a-light
-
-        type="directional"
-
-        color="#FFFFFF"
-
-        intensity="0.8"
-
-        position="-2 4 2">
-
-    </a-light>
+    </a-box>
 
 
 
     <!-- =====================================================
-         MODELO INDUSTRIAL COMPLETO
+         ESFERA
     ====================================================== -->
 
-    <a-entity
+    <a-sphere
 
-        id="objetoXR"
+        position="0 1.25 -5"
 
-        hide-on-enter-ar
+        radius="1.25"
 
-        position="0 0 -4"
+        color="#EF2D5E">
 
-        scale="0.45 0.45 0.45"
-    >
-
-
-
-        <!-- =================================================
-             PISO CELDA
-        ================================================== -->
-
-        <a-plane
-
-            position="0 0.02 0"
-
-            rotation="-90 0 0"
-
-            width="7.5"
-
-            height="4.5"
-
-            color="#B0BEC5"
-
-            material="
-                roughness: 0.9;
-            "
-
-            shadow="receive: true">
-
-        </a-plane>
-
-
-
-        <!-- =================================================
-             BANDA TRANSPORTADORA
-        ================================================== -->
-
-        <a-entity id="bandaTransportadora">
-
-
-
-            <a-box
-
-                position="-0.2 1 0"
-
-                width="5"
-
-                height="0.25"
-
-                depth="1.5"
-
-                color="#455A64"
-
-                shadow>
-
-            </a-box>
-
-
-
-            <a-box
-
-                position="-0.2 1.17 0"
-
-                width="4.65"
-
-                height="0.08"
-
-                depth="1.18"
-
-                color="#212121"
-
-                shadow>
-
-            </a-box>
-
-
-
-            <a-box
-
-                position="-0.2 1.32 -0.68"
-
-                width="5"
-
-                height="0.15"
-
-                depth="0.12"
-
-                color="#78909C">
-
-            </a-box>
-
-
-
-            <a-box
-
-                position="-0.2 1.32 0.68"
-
-                width="5"
-
-                height="0.15"
-
-                depth="0.12"
-
-                color="#78909C">
-
-            </a-box>
-
-
-
-            <!-- RODILLOS -->
-
-            <a-cylinder
-
-                position="-2.45 1.18 0"
-
-                rotation="90 0 0"
-
-                radius="0.23"
-
-                height="1.35"
-
-                color="#90A4AE">
-
-            </a-cylinder>
-
-
-            <a-cylinder
-
-                position="2.05 1.18 0"
-
-                rotation="90 0 0"
-
-                radius="0.23"
-
-                height="1.35"
-
-                color="#90A4AE">
-
-            </a-cylinder>
-
-
-
-            <a-cylinder
-                position="-1.5 1.10 0"
-                rotation="90 0 0"
-                radius="0.09"
-                height="1.15"
-                color="#607D8B">
-            </a-cylinder>
-
-
-            <a-cylinder
-                position="-0.6 1.10 0"
-                rotation="90 0 0"
-                radius="0.09"
-                height="1.15"
-                color="#607D8B">
-            </a-cylinder>
-
-
-            <a-cylinder
-                position="0.3 1.10 0"
-                rotation="90 0 0"
-                radius="0.09"
-                height="1.15"
-                color="#607D8B">
-            </a-cylinder>
-
-
-            <a-cylinder
-                position="1.2 1.10 0"
-                rotation="90 0 0"
-                radius="0.09"
-                height="1.15"
-                color="#607D8B">
-            </a-cylinder>
-
-
-
-            <!-- =================================================
-                 PATAS
-            ================================================== -->
-
-            <a-box
-                position="-2.1 0.48 -0.55"
-                width="0.18"
-                height="0.95"
-                depth="0.18"
-                color="#607D8B">
-            </a-box>
-
-
-            <a-box
-                position="-2.1 0.48 0.55"
-                width="0.18"
-                height="0.95"
-                depth="0.18"
-                color="#607D8B">
-            </a-box>
-
-
-            <a-box
-                position="1.7 0.48 -0.55"
-                width="0.18"
-                height="0.95"
-                depth="0.18"
-                color="#607D8B">
-            </a-box>
-
-
-            <a-box
-                position="1.7 0.48 0.55"
-                width="0.18"
-                height="0.95"
-                depth="0.18"
-                color="#607D8B">
-            </a-box>
-
-
-
-            <!-- TRAVESAÑOS -->
-
-            <a-box
-                position="-2.1 0.25 0"
-                width="0.15"
-                height="0.15"
-                depth="1.15"
-                color="#455A64">
-            </a-box>
-
-
-            <a-box
-                position="1.7 0.25 0"
-                width="0.15"
-                height="0.15"
-                depth="1.15"
-                color="#455A64">
-            </a-box>
-
-
-
-            <!-- =================================================
-                 CAJA FIJA
-            ================================================== -->
-
-            <a-box
-
-                position="-1.7 1.55 0"
-
-                width="0.6"
-
-                height="0.65"
-
-                depth="0.55"
-
-                color="#FF9800"
-
-                shadow>
-
-            </a-box>
-
-
-
-            <!-- =================================================
-                 PRODUCTO MOVIÉNDOSE
-            ================================================== -->
-
-            <a-box
-
-                position="-1.1 1.55 0"
-
-                width="0.55"
-
-                height="0.65"
-
-                depth="0.55"
-
-                color="#FFC107"
-
-                shadow
-
-                animation="
-                    property: position;
-                    from: -1.2 1.55 0;
-                    to: 1.55 1.55 0;
-                    dur: 5000;
-                    easing: linear;
-                    loop: true;
-                ">
-
-            </a-box>
-
-
-        </a-entity>
-
-
-
-        <!-- =================================================
-             SENSOR FOTOELÉCTRICO
-        ================================================== -->
-
-        <a-entity id="sensorFotoelectrico">
-
-
-            <a-cylinder
-
-                position="0.55 1.5 -1"
-
-                radius="0.07"
-
-                height="1"
-
-                color="#263238">
-
-            </a-cylinder>
-
-
-            <a-box
-
-                position="0.55 1.97 -0.65"
-
-                width="0.14"
-
-                height="0.14"
-
-                depth="0.7"
-
-                color="#263238">
-
-            </a-box>
-
-
-            <a-box
-
-                position="0.55 1.97 -0.27"
-
-                width="0.28"
-
-                height="0.24"
-
-                depth="0.25"
-
-                color="#37474F">
-
-            </a-box>
-
-
-            <a-sphere
-
-                position="0.55 1.98 -0.13"
-
-                radius="0.075"
-
-                color="#00E676"
-
-                material="
-                    emissive: #00E676;
-                    emissiveIntensity: 0.8;
-                "
-
-                animation="
-                    property: material.emissiveIntensity;
-                    from: 0;
-                    to: 1;
-                    dur: 700;
-                    dir: alternate;
-                    loop: true;
-                ">
-
-            </a-sphere>
-
-
-            <a-box
-
-                position="0.55 1.63 0"
-
-                width="0.035"
-
-                height="0.035"
-
-                depth="1.25"
-
-                color="#F44336"
-
-                material="
-                    transparent: true;
-                    opacity: 0.55;
-                    emissive: #F44336;
-                ">
-
-            </a-box>
-
-
-        </a-entity>
-
-
-
-        <!-- =================================================
-             PANEL DE CONTROL
-        ================================================== -->
-
-        <a-entity
-            id="panelControl"
-            position="2.75 0 1.15">
-
-
-            <a-box
-                position="0 0.65 0"
-                width="0.18"
-                height="1.3"
-                depth="0.18"
-                color="#455A64">
-            </a-box>
-
-
-            <a-box
-                position="0 1.55 0"
-                width="1"
-                height="1.15"
-                depth="0.55"
-                color="#607D8B"
-                shadow>
-            </a-box>
-
-
-            <a-box
-                position="0 1.72 -0.29"
-                width="0.68"
-                height="0.43"
-                depth="0.04"
-                color="#263238">
-            </a-box>
-
-
-            <a-box
-                position="0 1.72 -0.32"
-                width="0.58"
-                height="0.33"
-                depth="0.025"
-                color="#2196F3"
-
-                material="
-                    emissive: #1565C0;
-                    emissiveIntensity: 0.4;
-                ">
-            </a-box>
-
-
-            <a-cylinder
-                position="-0.22 1.30 -0.32"
-                rotation="90 0 0"
-                radius="0.09"
-                height="0.05"
-                color="#00E676">
-            </a-cylinder>
-
-
-            <a-cylinder
-                position="0.22 1.30 -0.32"
-                rotation="90 0 0"
-                radius="0.09"
-                height="0.05"
-                color="#F44336">
-            </a-cylinder>
-
-
-            <a-cylinder
-                position="0 2.25 0"
-                radius="0.11"
-                height="0.35"
-                color="#FFC107"
-
-                material="
-                    emissive: #FFC107;
-                    emissiveIntensity: 0.6;
-                ">
-            </a-cylinder>
-
-
-        </a-entity>
-
-
-
-        <!-- =================================================
-             MESA / RECEPCIÓN
-        ================================================== -->
-
-        <a-entity
-
-            id="zonaRecepcion"
-
-            position="2.7 0 -0.25"
-        >
-
-
-            <a-box
-                position="0 0.85 0"
-                width="1.15"
-                height="0.15"
-                depth="1.4"
-                color="#CFD8DC"
-                shadow>
-            </a-box>
-
-
-            <a-box
-                position="-0.45 0.4 -0.5"
-                width="0.15"
-                height="0.8"
-                depth="0.15"
-                color="#607D8B">
-            </a-box>
-
-
-            <a-box
-                position="0.45 0.4 -0.5"
-                width="0.15"
-                height="0.8"
-                depth="0.15"
-                color="#607D8B">
-            </a-box>
-
-
-            <a-box
-                position="-0.45 0.4 0.5"
-                width="0.15"
-                height="0.8"
-                depth="0.15"
-                color="#607D8B">
-            </a-box>
-
-
-            <a-box
-                position="0.45 0.4 0.5"
-                width="0.15"
-                height="0.8"
-                depth="0.15"
-                color="#607D8B">
-            </a-box>
-
-
-            <a-box
-                position="0 1.2 0"
-                width="0.55"
-                height="0.55"
-                depth="0.55"
-                color="#8BC34A"
-                shadow>
-            </a-box>
-
-
-        </a-entity>
-
-
-
-        <!-- =================================================
-             MARCAS DE SEGURIDAD
-        ================================================== -->
-
-        <a-box
-
-            position="0 -0.01 -1.7"
-
-            width="6.2"
-
-            height="0.025"
-
-            depth="0.08"
-
-            color="#FFC107">
-
-        </a-box>
-
-
-        <a-box
-
-            position="0 -0.01 1.7"
-
-            width="6.2"
-
-            height="0.025"
-
-            depth="0.08"
-
-            color="#FFC107">
-
-        </a-box>
-
-
-    </a-entity>
+    </a-sphere>
 
 
 
     <!-- =====================================================
-         PISO GENERAL
+         CILINDRO
+    ====================================================== -->
+
+    <a-cylinder
+
+        position="1 0.75 -3"
+
+        radius="0.5"
+
+        height="1.5"
+
+        color="#FFC65D">
+
+    </a-cylinder>
+
+
+
+    <!-- =====================================================
+         PISO
     ====================================================== -->
 
     <a-plane
-
-        hide-on-enter-ar
 
         position="0 0 -4"
 
         rotation="-90 0 0"
 
-        width="18"
+        width="12"
 
-        height="18"
+        height="12"
 
-        color="#78909C"
-
-        shadow="receive: true">
+        color="#7BC8A4">
 
     </a-plane>
 
 
 
     <!-- =====================================================
-         CIELO
+         FONDO
     ====================================================== -->
 
     <a-sky
 
-        hide-on-enter-ar
-
-        color="#DCE6EA">
+        color="#ECECEC">
 
     </a-sky>
 
@@ -1929,12 +1102,6 @@
 
     <!-- =====================================================
          RIG DEL USUARIO
-
-         PC:
-         WASD + Q/E
-
-         META QUEST:
-         JOYSTICK IZQUIERDO
     ====================================================== -->
 
     <a-entity
@@ -1950,7 +1117,7 @@
         "
 
         movimiento-vr="
-            velocidad: 1.6;
+            velocidad: 1.5;
             zonaMuerta: 0.15;
         "
     >
@@ -1982,9 +1149,7 @@
 
 
             <!-- =============================================
-                 HUD DE LATENCIA EN VR
-
-                 Se oculta automáticamente fuera de VR.
+                 INDICADOR DE LATENCIA DENTRO DE VR
             ============================================== -->
 
             <a-text
@@ -2011,7 +1176,7 @@
 
 
         <!-- =================================================
-             CONTROL IZQUIERDO META QUEST 3
+             CONTROLADOR IZQUIERDO META QUEST 3
         ================================================== -->
 
         <a-entity
@@ -2027,7 +1192,7 @@
 
 
         <!-- =================================================
-             CONTROL DERECHO
+             CONTROLADOR DERECHO META QUEST 3
         ================================================== -->
 
         <a-entity
