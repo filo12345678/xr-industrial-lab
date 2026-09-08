@@ -46,14 +46,15 @@
             position: fixed;
 
             top: 15px;
-
             left: 15px;
 
             z-index: 9999;
 
+            width: 310px;
+
             padding: 12px 15px;
 
-            background: rgba(0, 0, 0, 0.70);
+            background: rgba(0, 0, 0, 0.72);
 
             color: white;
 
@@ -76,6 +77,40 @@
 
             font-size: 17px;
 
+            margin-bottom: 8px;
+
+        }
+
+
+        .verde {
+
+            color: #00ff99;
+
+        }
+
+
+        .amarillo {
+
+            color: #ffd54f;
+
+        }
+
+
+        .rojo {
+
+            color: #ff5252;
+
+        }
+
+
+        #rendimiento {
+
+            margin-top: 10px;
+
+            padding-top: 8px;
+
+            border-top: 1px solid rgba(255,255,255,0.35);
+
         }
 
     </style>
@@ -86,7 +121,11 @@
 
 
         // =====================================================
+        // =====================================================
+        //
         // MOVIMIENTO EN PC
+        //
+        // =====================================================
         //
         // W = adelante
         // S = atrás
@@ -98,7 +137,7 @@
         //
         // Mouse = mirar
         //
-        // EN AR Y VR SE DESACTIVA COMPLETAMENTE.
+        // Se desactiva durante AR y VR.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -108,29 +147,45 @@
                 schema: {
 
                     velocidad: {
+
                         type: 'number',
+
                         default: 2
+
                     },
+
 
                     velocidadVertical: {
+
                         type: 'number',
+
                         default: 1.5
+
                     },
+
 
                     alturaMinima: {
+
                         type: 'number',
+
                         default: 0.25
+
                     },
 
+
                     alturaMaxima: {
+
                         type: 'number',
+
                         default: 5
+
                     }
 
                 },
 
 
                 init: function () {
+
 
                     this.teclas = {};
 
@@ -144,6 +199,7 @@
                     this.presionar =
                         (evento) => {
 
+
                             this.teclas[
                                 evento.code
                             ] = true;
@@ -153,6 +209,7 @@
 
                     this.soltar =
                         (evento) => {
+
 
                             this.teclas[
                                 evento.code
@@ -175,10 +232,12 @@
                 },
 
 
+
                 tick: function (
                     tiempo,
                     delta
                 ) {
+
 
                     if (!delta) {
 
@@ -191,13 +250,17 @@
                         this.el.sceneEl;
 
 
+
                     // =========================================
-                    // NO INTERFERIR CON WEBXR
+                    // NO INTERFERIR CON XR
                     // =========================================
 
                     if (
+
                         escena.is('ar-mode') ||
+
                         escena.is('vr-mode')
+
                     ) {
 
                         return;
@@ -215,7 +278,7 @@
 
 
                     // =========================================
-                    // DIRECCIÓN SEGÚN LA CÁMARA
+                    // DIRECCIÓN SEGÚN CÁMARA
                     // =========================================
 
                     const quaternion =
@@ -289,11 +352,16 @@
                     ) {
 
                         rig.position.addScaledVector(
+
                             adelante,
-                            this.data.velocidad * dt
+
+                            this.data.velocidad *
+                            dt
+
                         );
 
                     }
+
 
 
                     // =========================================
@@ -305,27 +373,16 @@
                     ) {
 
                         rig.position.addScaledVector(
+
                             adelante,
-                            -this.data.velocidad * dt
+
+                            -this.data.velocidad *
+                            dt
+
                         );
 
                     }
 
-
-                    // =========================================
-                    // D
-                    // =========================================
-
-                    if (
-                        this.teclas['KeyD']
-                    ) {
-
-                        rig.position.addScaledVector(
-                            derecha,
-                            this.data.velocidad * dt
-                        );
-
-                    }
 
 
                     // =========================================
@@ -337,11 +394,37 @@
                     ) {
 
                         rig.position.addScaledVector(
+
                             derecha,
-                            -this.data.velocidad * dt
+
+                            -this.data.velocidad *
+                            dt
+
                         );
 
                     }
+
+
+
+                    // =========================================
+                    // D
+                    // =========================================
+
+                    if (
+                        this.teclas['KeyD']
+                    ) {
+
+                        rig.position.addScaledVector(
+
+                            derecha,
+
+                            this.data.velocidad *
+                            dt
+
+                        );
+
+                    }
+
 
 
                     // =========================================
@@ -353,10 +436,13 @@
                     ) {
 
                         rig.position.y +=
-                            this.data.velocidadVertical *
+
+                            this.data
+                                .velocidadVertical *
                             dt;
 
                     }
+
 
 
                     // =========================================
@@ -368,24 +454,25 @@
                     ) {
 
                         rig.position.y -=
-                            this.data.velocidadVertical *
+
+                            this.data
+                                .velocidadVertical *
                             dt;
 
                     }
 
 
-                    // =========================================
-                    // LIMITAR ALTURA
-                    // =========================================
 
                     rig.position.y =
                         THREE.MathUtils.clamp(
 
                             rig.position.y,
 
-                            this.data.alturaMinima,
+                            this.data
+                                .alturaMinima,
 
-                            this.data.alturaMaxima
+                            this.data
+                                .alturaMaxima
 
                         );
 
@@ -397,15 +484,390 @@
 
 
         // =====================================================
+        // =====================================================
+        //
+        // MOVIMIENTO VR - META QUEST
+        //
+        // =====================================================
+        //
+        // Joystick izquierdo:
+        //
+        // arriba  -> avanzar
+        // abajo   -> retroceder
+        // izquierda/derecha -> desplazamiento lateral
+        //
+        // La dirección se calcula respecto a la orientación
+        // horizontal del visor.
+        //
+        // =====================================================
+
+        AFRAME.registerComponent(
+            'movimiento-vr',
+            {
+
+                schema: {
+
+                    velocidad: {
+
+                        type: 'number',
+
+                        default: 1.5
+
+                    },
+
+
+                    zonaMuerta: {
+
+                        type: 'number',
+
+                        default: 0.18
+
+                    }
+
+                },
+
+
+                init: function () {
+
+
+                    this.camara =
+                        document.getElementById(
+                            'camara'
+                        );
+
+
+                    this.vectorAdelante =
+                        new THREE.Vector3();
+
+
+                    this.vectorDerecha =
+                        new THREE.Vector3();
+
+
+                    this.quaternion =
+                        new THREE.Quaternion();
+
+                },
+
+
+
+                tick: function (
+                    tiempo,
+                    delta
+                ) {
+
+
+                    if (!delta) {
+
+                        return;
+
+                    }
+
+
+                    const escena =
+                        this.el.sceneEl;
+
+
+
+                    // =========================================
+                    // SOLO EN VR
+                    //
+                    // NO FUNCIONA EN AR.
+                    // =========================================
+
+                    if (
+
+                        !escena.is('vr-mode') ||
+
+                        escena.is('ar-mode')
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+
+                    const renderer =
+                        escena.renderer;
+
+
+                    if (!renderer) {
+
+                        return;
+
+                    }
+
+
+
+                    const session =
+                        renderer.xr.getSession();
+
+
+                    if (!session) {
+
+                        return;
+
+                    }
+
+
+
+                    // =========================================
+                    // BUSCAR CONTROLADOR IZQUIERDO
+                    // =========================================
+
+                    let inputIzquierdo =
+                        null;
+
+
+                    for (
+                        const inputSource
+                        of session.inputSources
+                    ) {
+
+
+                        if (
+
+                            inputSource.handedness ===
+                            'left' &&
+
+                            inputSource.gamepad
+
+                        ) {
+
+                            inputIzquierdo =
+                                inputSource;
+
+                            break;
+
+                        }
+
+                    }
+
+
+
+                    if (!inputIzquierdo) {
+
+                        return;
+
+                    }
+
+
+
+                    const gamepad =
+                        inputIzquierdo.gamepad;
+
+
+                    const axes =
+                        gamepad.axes;
+
+
+                    if (
+
+                        !axes ||
+
+                        axes.length < 2
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+
+                    // =========================================
+                    // DETECTAR EJES DEL JOYSTICK
+                    //
+                    // En Quest normalmente los dos últimos
+                    // ejes corresponden al thumbstick.
+                    // =========================================
+
+                    const ejeX =
+                        axes[
+                            axes.length - 2
+                        ] || 0;
+
+
+                    const ejeY =
+                        axes[
+                            axes.length - 1
+                        ] || 0;
+
+
+
+                    // =========================================
+                    // ZONA MUERTA
+                    // =========================================
+
+                    let x =
+                        Math.abs(ejeX) >
+                        this.data.zonaMuerta
+                        ?
+                        ejeX
+                        :
+                        0;
+
+
+                    let y =
+                        Math.abs(ejeY) >
+                        this.data.zonaMuerta
+                        ?
+                        ejeY
+                        :
+                        0;
+
+
+
+                    if (
+                        x === 0 &&
+                        y === 0
+                    ) {
+
+                        return;
+
+                    }
+
+
+
+                    // =========================================
+                    // ORIENTACIÓN DEL VISOR
+                    // =========================================
+
+                    this.camara.object3D
+                        .getWorldQuaternion(
+                            this.quaternion
+                        );
+
+
+
+                    // =========================================
+                    // ADELANTE SEGÚN HACIA DÓNDE MIRAS
+                    // =========================================
+
+                    this.vectorAdelante.set(
+                        0,
+                        0,
+                        -1
+                    );
+
+
+                    this.vectorAdelante
+                        .applyQuaternion(
+                            this.quaternion
+                        );
+
+
+                    // Movimiento solo horizontal.
+
+                    this.vectorAdelante.y =
+                        0;
+
+
+                    if (
+                        this.vectorAdelante
+                            .lengthSq() > 0
+                    ) {
+
+                        this.vectorAdelante
+                            .normalize();
+
+                    }
+
+
+
+                    // =========================================
+                    // DERECHA
+                    // =========================================
+
+                    this.vectorDerecha.set(
+                        1,
+                        0,
+                        0
+                    );
+
+
+                    this.vectorDerecha
+                        .applyQuaternion(
+                            this.quaternion
+                        );
+
+
+                    this.vectorDerecha.y =
+                        0;
+
+
+                    if (
+                        this.vectorDerecha
+                            .lengthSq() > 0
+                    ) {
+
+                        this.vectorDerecha
+                            .normalize();
+
+                    }
+
+
+
+                    const dt =
+                        delta / 1000;
+
+
+                    const rig =
+                        this.el.object3D;
+
+
+
+                    // =========================================
+                    // MOVIMIENTO ADELANTE / ATRÁS
+                    //
+                    // El eje Y del joystick:
+                    //
+                    // arriba = negativo
+                    // abajo  = positivo
+                    //
+                    // por eso usamos -y.
+                    // =========================================
+
+                    rig.position.addScaledVector(
+
+                        this.vectorAdelante,
+
+                        -y *
+                        this.data.velocidad *
+                        dt
+
+                    );
+
+
+
+                    // =========================================
+                    // MOVIMIENTO LATERAL
+                    // =========================================
+
+                    rig.position.addScaledVector(
+
+                        this.vectorDerecha,
+
+                        x *
+                        this.data.velocidad *
+                        dt
+
+                    );
+
+                }
+
+            }
+        );
+
+
+
+        // =====================================================
+        // =====================================================
+        //
         // RIG PARA XR
         //
-        // PC:
-        // altura simulada = 1.6 m
-        //
-        // AR / VR:
-        // rig = 0,0,0
-        //
-        // WebXR obtiene posición física real.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -413,6 +875,7 @@
             {
 
                 init: function () {
+
 
                     const rig =
                         this.el;
@@ -433,8 +896,14 @@
                             );
 
 
-                            // Eliminar desplazamiento
-                            // artificial del PC.
+
+                            /*
+                            En XR quitamos la altura
+                            artificial de 1.6 m.
+
+                            El propio visor proporciona
+                            la altura física de la cabeza.
+                            */
 
                             rig.object3D.position.set(
                                 0,
@@ -467,7 +936,246 @@
 
 
         // =====================================================
-        // CONTROL DEL MODELO GLB
+        // =====================================================
+        //
+        // MEDICIÓN DE RENDIMIENTO / LATENCIA GRÁFICA
+        //
+        // =====================================================
+        //
+        // IMPORTANTE:
+        //
+        // Esto NO representa motion-to-photon latency.
+        //
+        // Estamos midiendo:
+        //
+        // tiempo medio entre fotogramas
+        //
+        // frameTime = deltaTime
+        //
+        // FPS = 1000 / frameTime
+        //
+        // Es adecuado reportarlo como:
+        //
+        // "Tiempo por fotograma"
+        // "Latencia aproximada de renderizado"
+        //
+        // =====================================================
+
+        AFRAME.registerComponent(
+            'medidor-rendimiento',
+            {
+
+                init: function () {
+
+
+                    this.acumulado =
+                        0;
+
+
+                    this.frames =
+                        0;
+
+
+                    this.tiempoActualizacion =
+                        0;
+
+
+                    this.elementoFPS =
+                        document.getElementById(
+                            'fps'
+                        );
+
+
+                    this.elementoLatencia =
+                        document.getElementById(
+                            'latencia'
+                        );
+
+
+                    this.elementoEstado =
+                        document.getElementById(
+                            'estadoLatencia'
+                        );
+
+                },
+
+
+
+                tick: function (
+                    tiempo,
+                    delta
+                ) {
+
+
+                    if (
+
+                        !delta ||
+
+                        delta > 250
+
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    this.acumulado +=
+                        delta;
+
+
+                    this.frames++;
+
+
+                    this.tiempoActualizacion +=
+                        delta;
+
+
+
+                    // =========================================
+                    // ACTUALIZAR CADA 0.5 s
+                    // =========================================
+
+                    if (
+                        this.tiempoActualizacion <
+                        500
+                    ) {
+
+                        return;
+
+                    }
+
+
+
+                    const frameTime =
+                        this.acumulado /
+                        this.frames;
+
+
+                    const fps =
+                        1000 /
+                        frameTime;
+
+
+
+                    if (
+                        this.elementoFPS
+                    ) {
+
+                        this.elementoFPS.textContent =
+                            fps.toFixed(1);
+
+                    }
+
+
+
+                    if (
+                        this.elementoLatencia
+                    ) {
+
+                        this.elementoLatencia
+                            .textContent =
+                            frameTime.toFixed(1) +
+                            " ms";
+
+                    }
+
+
+
+                    // =========================================
+                    // CLASIFICACIÓN
+                    // =========================================
+
+                    if (
+                        this.elementoEstado
+                    ) {
+
+
+                        if (
+                            frameTime <= 13
+                        ) {
+
+                            this.elementoEstado
+                                .textContent =
+                                "Muy buena";
+
+
+                            this.elementoEstado
+                                .className =
+                                "verde";
+
+                        }
+
+
+                        else if (
+                            frameTime <= 20
+                        ) {
+
+                            this.elementoEstado
+                                .textContent =
+                                "Buena";
+
+
+                            this.elementoEstado
+                                .className =
+                                "verde";
+
+                        }
+
+
+                        else if (
+                            frameTime <= 33
+                        ) {
+
+                            this.elementoEstado
+                                .textContent =
+                                "Moderada";
+
+
+                            this.elementoEstado
+                                .className =
+                                "amarillo";
+
+                        }
+
+
+                        else {
+
+                            this.elementoEstado
+                                .textContent =
+                                "Alta";
+
+
+                            this.elementoEstado
+                                .className =
+                                "rojo";
+
+                        }
+
+                    }
+
+
+
+                    this.acumulado =
+                        0;
+
+
+                    this.frames =
+                        0;
+
+
+                    this.tiempoActualizacion =
+                        0;
+
+                }
+
+            }
+        );
+
+
+
+        // =====================================================
+        // CONTROL DEL MODELO
         // =====================================================
 
         AFRAME.registerComponent(
@@ -476,9 +1184,11 @@
 
                 init: function () {
 
+
                     this.el.addEventListener(
                         'model-loaded',
                         () => {
+
 
                             console.log(
                                 'Modelo CAD cargado correctamente'
@@ -491,6 +1201,7 @@
                     this.el.addEventListener(
                         'model-error',
                         (evento) => {
+
 
                             console.error(
                                 'Error cargando modelo:',
@@ -508,25 +1219,10 @@
 
 
         // =====================================================
+        // =====================================================
+        //
         // COLOCACIÓN FIJA EN AR
         //
-        // IMPORTANTE:
-        //
-        // El Hit Test mueve SOLO el retículo.
-        //
-        // Cuando el usuario toca:
-        //
-        // RETÍCULO
-        //    ↓
-        // copiar posición
-        //    ↓
-        // ROBOT
-        //
-        // Después:
-        //
-        // this.colocado = true
-        //
-        // y NO volvemos a modificar el robot.
         // =====================================================
 
         AFRAME.registerComponent(
@@ -534,6 +1230,7 @@
             {
 
                 init: function () {
+
 
                     const escena =
                         this.el;
@@ -584,23 +1281,25 @@
                                 false;
 
 
-                            // Ocultar modelo hasta
-                            // seleccionar superficie.
-
-                            this.modelo.object3D.visible =
+                            this.modelo
+                                .object3D
+                                .visible =
                                 false;
 
 
-                            this.reticulo.object3D.visible =
+                            this.reticulo
+                                .object3D
+                                .visible =
                                 false;
 
 
-                            // Ocultar panel para tener
-                            // toda la pantalla disponible.
+                            if (
+                                this.panel
+                            ) {
 
-                            if (this.panel) {
-
-                                this.panel.style.display =
+                                this.panel
+                                    .style
+                                    .display =
                                     'none';
 
                             }
@@ -628,7 +1327,9 @@
                             }
 
 
-                            this.reticulo.object3D.visible =
+                            this.reticulo
+                                .object3D
+                                .visible =
                                 true;
 
                         }
@@ -637,7 +1338,7 @@
 
 
                     // =========================================
-                    // SE PERDIÓ LA SUPERFICIE
+                    // SUPERFICIE PERDIDA
                     // =========================================
 
                     escena.addEventListener(
@@ -654,7 +1355,9 @@
                             }
 
 
-                            this.reticulo.object3D.visible =
+                            this.reticulo
+                                .object3D
+                                .visible =
                                 false;
 
                         }
@@ -663,7 +1366,7 @@
 
 
                     // =========================================
-                    // TOCAR PARA COLOCAR
+                    // COLOCAR ROBOT
                     // =========================================
 
                     escena.addEventListener(
@@ -680,12 +1383,6 @@
                             }
 
 
-                            // =================================
-                            // SI YA ESTÁ COLOCADO:
-                            //
-                            // NO HACER ABSOLUTAMENTE NADA.
-                            // =================================
-
                             if (
                                 this.colocado
                             ) {
@@ -696,38 +1393,29 @@
 
 
 
-                            // =================================
-                            // COPIAR POSICIÓN
-                            // =================================
-
-                            this.modelo.object3D
+                            this.modelo
+                                .object3D
                                 .position
                                 .copy(
+
                                     this.reticulo
                                         .object3D
                                         .position
+
                                 );
 
 
-                            // =================================
-                            // MOSTRAR ROBOT
-                            // =================================
-
-                            this.modelo.object3D.visible =
+                            this.modelo
+                                .object3D
+                                .visible =
                                 true;
 
 
-                            // =================================
-                            // OCULTAR RETÍCULO
-                            // =================================
-
-                            this.reticulo.object3D.visible =
+                            this.reticulo
+                                .object3D
+                                .visible =
                                 false;
 
-
-                            // =================================
-                            // BLOQUEAR POSICIÓN
-                            // =================================
 
                             this.colocado =
                                 true;
@@ -743,7 +1431,7 @@
 
 
                     // =========================================
-                    // SALIR DE XR
+                    // SALIR XR
                     // =========================================
 
                     escena.addEventListener(
@@ -755,27 +1443,35 @@
                                 false;
 
 
-                            // Restaurar modelo para
-                            // modo PC / IMU.
+                            this.modelo
+                                .object3D
+                                .position
+                                .set(
+                                    0,
+                                    0,
+                                    -3
+                                );
 
-                            this.modelo.object3D.position.set(
-                                0,
-                                0,
-                                -3
-                            );
 
-
-                            this.modelo.object3D.visible =
+                            this.modelo
+                                .object3D
+                                .visible =
                                 true;
 
 
-                            this.reticulo.object3D.visible =
+                            this.reticulo
+                                .object3D
+                                .visible =
                                 false;
 
 
-                            if (this.panel) {
+                            if (
+                                this.panel
+                            ) {
 
-                                this.panel.style.display =
+                                this.panel
+                                    .style
+                                    .display =
                                     'block';
 
                             }
@@ -798,11 +1494,13 @@
 <body>
 
 
+
 <!-- =========================================================
-     INFORMACIÓN
+     PANEL DE INFORMACIÓN
 ========================================================= -->
 
 <div id="panel">
+
 
     <div id="titulo">
 
@@ -810,7 +1508,6 @@
 
     </div>
 
-    <br>
 
     <b>PC</b>
 
@@ -834,7 +1531,9 @@
 
     Mouse = mirar
 
+
     <br><br>
+
 
     <b>Celular</b>
 
@@ -842,7 +1541,27 @@
 
     Mueve el teléfono para usar IMU.
 
+
     <br><br>
+
+
+    <b>VR - Meta Quest 3</b>
+
+    <br>
+
+    Joystick izquierdo = desplazamiento
+
+    <br>
+
+    Mover la cabeza = mirar
+
+    <br>
+
+    Caminar físicamente = seguimiento 6DoF
+
+
+    <br><br>
+
 
     <b>AR</b>
 
@@ -850,6 +1569,52 @@
 
     Busca una superficie y toca
     una vez para colocar el robot.
+
+
+
+    <!-- =====================================================
+         RENDIMIENTO
+    ====================================================== -->
+
+    <div id="rendimiento">
+
+
+        <b>Rendimiento</b>
+
+        <br>
+
+        FPS:
+        <span id="fps">
+            --
+        </span>
+
+
+        <br>
+
+
+        Tiempo por fotograma:
+
+        <span id="latencia">
+            -- ms
+        </span>
+
+
+        <br>
+
+
+        Estado:
+
+        <span
+            id="estadoLatencia"
+            class="verde">
+
+            Midiendo...
+
+        </span>
+
+
+    </div>
+
 
 </div>
 
@@ -870,16 +1635,9 @@
 
     webxr="
         optionalFeatures: hit-test, local-floor;
-        referenceSpaceType: local;
+        referenceSpaceType: local-floor;
     "
 
-
-    <!--
-    MUY IMPORTANTE:
-
-    EL TARGET ES EL RETÍCULO,
-    NO EL ROBOT.
-    -->
 
     ar-hit-test="
         target: #reticulo;
@@ -889,6 +1647,9 @@
 
 
     colocacion-ar-fija
+
+
+    medidor-rendimiento
 
 
     renderer="
@@ -951,8 +1712,6 @@
 
     <!-- =====================================================
          RETÍCULO AR
-         
-         A-FRAME MUEVE ESTE OBJETO.
     ====================================================== -->
 
     <a-entity
@@ -986,9 +1745,7 @@
 
 
     <!-- =====================================================
-         CONTENEDOR DEL ROBOT
-
-         ESTE QUEDA FIJO DESPUÉS DEL PRIMER TOQUE.
+         ROBOT
     ====================================================== -->
 
     <a-entity
@@ -1000,15 +1757,6 @@
         visible="true"
     >
 
-
-
-        <!-- =================================================
-             BRAZO ROBÓTICO
-
-             Vista lateral.
-             
-             Escala pequeña.
-        ================================================== -->
 
         <a-entity
 
@@ -1032,9 +1780,7 @@
 
 
     <!-- =====================================================
-         PISO PC / VR
-
-         SE OCULTA AUTOMÁTICAMENTE EN AR.
+         PISO
     ====================================================== -->
 
     <a-plane
@@ -1043,9 +1789,9 @@
 
         rotation="-90 0 0"
 
-        width="12"
+        width="20"
 
-        height="12"
+        height="20"
 
         color="#78909C"
 
@@ -1056,9 +1802,7 @@
 
 
     <!-- =====================================================
-         CIELO PC / VR
-
-         SE OCULTA AUTOMÁTICAMENTE EN AR.
+         CIELO
     ====================================================== -->
 
     <a-sky
@@ -1073,6 +1817,9 @@
 
     <!-- =====================================================
          RIG DEL USUARIO
+
+         movimiento-pc  -> PC
+         movimiento-vr  -> META QUEST
     ====================================================== -->
 
     <a-entity
@@ -1083,11 +1830,18 @@
 
         control-rig-xr
 
+
         movimiento-pc="
             velocidad: 2;
             velocidadVertical: 1.5;
             alturaMinima: 0.25;
             alturaMaxima: 5;
+        "
+
+
+        movimiento-vr="
+            velocidad: 1.5;
+            zonaMuerta: 0.18;
         "
     >
 
@@ -1095,15 +1849,6 @@
 
         <!-- =================================================
              CÁMARA
-
-             PC:
-             Mouse
-
-             CELULAR:
-             IMU
-
-             VR:
-             Seguimiento físico del visor
         ================================================== -->
 
         <a-camera
@@ -1120,6 +1865,41 @@
             ">
 
         </a-camera>
+
+
+
+        <!-- =================================================
+             CONTROLADOR IZQUIERDO META QUEST
+
+             tracked-controls permite que WebXR reconozca
+             el controlador.
+        ================================================== -->
+
+        <a-entity
+
+            id="controlIzquierdo"
+
+            tracked-controls="
+                hand: left;
+            ">
+
+        </a-entity>
+
+
+
+        <!-- =================================================
+             CONTROLADOR DERECHO
+        ================================================== -->
+
+        <a-entity
+
+            id="controlDerecho"
+
+            tracked-controls="
+                hand: right;
+            ">
+
+        </a-entity>
 
 
     </a-entity>
